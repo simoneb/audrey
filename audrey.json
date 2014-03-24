@@ -1,0 +1,14 @@
+{
+  "server": {
+    "registry": "http://localhost:3010",
+    "repositories": [
+      "https://github.com/nunit/nunit-framework.git"
+    ]
+  },
+  "agent": {
+    "registry": "http://localhost:3010",
+    "repositories": [
+      "https://github.com/nunit/nunit-framework.git"
+    ]
+  }
+}

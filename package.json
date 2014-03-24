@@ -1,0 +1,17 @@
+{
+  "name": "audrey",
+  "version": "0.0.0",
+  "description": "distributed build system",
+  "main": "audrey.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Simone Busoli <simone.busoli@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "github": "~0.1.14",
+    "socket.io": "~0.9.16",
+    "socket.io-client": "~0.9.16",
+    "yaml": "~0.2.3"
+  }
+}
