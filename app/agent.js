@@ -107,7 +107,7 @@ function start() {
 
     server.on('connect', function () {
       console.log('Connected to server %s to build %s', data.serverUrl, data.repoUrl);
-      registry.emit('unregister', { repoUrl: data.repoUrl });
+      //registry.emit('unregister', { repoUrl: data.repoUrl });
 
       git.pullOrClone(data.repoUrl, function (err, repoPath) {
         if (err) {
@@ -125,7 +125,7 @@ function start() {
 
     server.on('disconnect', function () {
       console.log('Disconnected from server %s', data.serverUrl);
-      registry.emit('register', [data.url]);
+      //registry.emit('register', { repoUrl: data.repoUrl });
     });
 
     server.on('error', function (err) {

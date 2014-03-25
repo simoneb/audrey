@@ -50,9 +50,9 @@ function start() {
               },
               function (agent) {
                 if (!agent) {
-                  console.log('Found no agent to satisfy requirements %s', data.cell.requirements);
+                  console.log('No agent satisfies requirements "%s"', data.cell.requirements);
                 } else {
-                  console.log('Found agent which satisfies requirements %s', data.cell.requirements);
+                  console.log('Agent %s satisfies requirements "%s"', agent.id, data.cell.requirements);
                   agent.emit('run', data);
                 }
               });
