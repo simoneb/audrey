@@ -8,7 +8,7 @@ var io_client = require('socket.io-client'),
     repositories = {};
 
 function start() {
-  var io = socketio.listen(3011);
+  var io = socketio.listen(parseInt(url.parse(config.url).port));
   console.log('Connecting to registry');
   var registry = io_client.connect(config.registry);
   console.log('Server configuration:');
@@ -16,12 +16,8 @@ function start() {
 
   function makeBuildRequest(url) {
     return function() {
-      console.log('Requesting agents for %s', url);
-
-      registry.emit('giveMe', {
-        url: url,
-        serverUrl: 'http://localhost:3011'
-      });
+      console.log('Requesting to build %s', url);
+      registry.emit('run', { url: url, serverUrl: config.url });
     };
   }
 
@@ -47,10 +43,14 @@ function start() {
     console.dir(data.agents);
   });
 
-  io.on('connection', function(socket) {
-    socket.on('message', function(message) {
-      console.log("message from %s: %s", socket.id, message);
+  io.on('connection', function(agent) {
+    console.log('Received connection from agent %s to build %s', agent.id, agent.url);
+    agent.on('message', function(message) {
+      console.log("message from %s: %s", agent.id, message);
     });
+    agent.on('disconnect', function() {
+      console.log('Agent %s disconnected', agent.id);
+    })
   });
 
 };

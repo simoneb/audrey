@@ -1,4 +1,4 @@
 var argv = process.argv.slice(2);
 
-require('./' + argv.shift())[argv.shift()](argv);
+require('./app/' + argv.shift())[argv.shift()](argv);
 

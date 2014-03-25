@@ -14,15 +14,26 @@ function start() {
     registry.emit('register', config.repositories);
   });
 
-  registry.on('pleaseContact', function(data) {
-    console.log('Now getting in touch with %s about %s',
-      data.serverUrl, data.url);
+  registry.on('error', function(err) {
+    console.error('Error when communicating with registry\n%s', err);
+  });
 
+  registry.on('run', function(data) {
     var server = io_client.connect(data.serverUrl);
 
     server.on('connect', function() {
-      console.log('Connected to server %s', data.serverUrl);
-      server.emit('message', 'Hey man, I\'m going to build ' + data.url +' for you');
+      console.log('Connected to server %s to build %s', data.serverUrl, data.url);
+      server.send('Build of ' + data.url +' successful');
+      server.disconnect();
+    });
+
+    server.on('disconnect', function(){
+      console.log('Disconnected from server %s', data.serverUrl);
+    });
+
+    server.on('error', function(err) {
+      console.error('Error when communicating with server %s about %s\n%s',
+        data.serverUrl, data.url, err);
     });
   });
 };
