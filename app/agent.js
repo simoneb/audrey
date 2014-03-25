@@ -20,7 +20,7 @@ function start() {
 
   registry.on('run', function(data) {
     console.log('Received request to build %s', data.url);
-    var server = io_client.connect(data.serverUrl);
+    var server = io_client.connect(data.serverUrl,{'force new connection':true});
 
     server.on('connect', function() {
       console.log('Connected to server %s to build %s', data.serverUrl, data.url);

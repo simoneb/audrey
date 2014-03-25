@@ -22,7 +22,7 @@ function start() {
         registry.emit('run', {
           url: repoUrl,
           serverUrl: config.url,
-          command: './runbuild'
+          command: 'runbuild'
         });
       });
     });
@@ -45,7 +45,7 @@ function start() {
 
     agent.on('disconnect', function() {
       console.log('Agent %s disconnected', agent.id);
-    })
+    });
   });
 
 };
