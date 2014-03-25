@@ -36,6 +36,10 @@ function start() {
       });
     });
 
+    server.on('connect_failed', function() {
+      console.error("Couldn't connect to server %s", data.serverUrl);
+    });
+
     server.on('disconnect', function(){
       console.log('Disconnected from server %s', data.serverUrl);
       registry.emit('register', [data.url]);
