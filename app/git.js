@@ -32,7 +32,7 @@ function pullOrClone(repoUrl, callback) {
     });
 
     console.log('Cloning %s into %s', repoUrl, repoPath);
-    exec("git clone " + repoUrl, { cwd: repoPath }, doCallback);
+    exec("git clone " + repoUrl + " " + repoPath, doCallback);
   }
 }
 
