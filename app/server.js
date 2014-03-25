@@ -23,7 +23,7 @@ function start() {
         registry.emit('run', {
           url: repoUrl,
           serverUrl: config.url,
-          command: './runbuild'
+          command: './runbuild "/t:Clean;Build;Test"'
         });
       });
     });

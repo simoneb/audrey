@@ -1,20 +1,25 @@
 var spawn = require('child_process').spawn,
+  fs = require('fs'),
+  crypto = require('crypto'),
   ss = require('socket.io-stream'),
   path = require('path'),
   isWindows = (/windows/i).test(require('os').type());
 
 function startBuild(data, repoPath, socket, callback) {
   var opts = {
-    cwd: path.join(process.cwd(), repoPath),
-    stdio: 'pipe'
-  };
+      cwd: path.join(process.cwd(), repoPath),
+      stdio: 'pipe'
+    },
+    script = path.join(process.env.TMP || process.env.TMPDIR || '/tmp',
+      crypto.randomBytes(8).readUInt32LE(0) + '');
 
-  // don't we need to wrap the command in quotes on windows?
-  if (isWindows)
-    var command = spawn(process.env.comspec,
-      ['/c', data.command.replace('/', "\\")], opts);
-  else
-    var command = spawn(data.command, [], opts);
+  if(isWindows)
+    script += '.cmd';
+
+  fs.writeFileSync(script, data.command);
+  fs.chmodSync(script, '755');
+
+  var command = spawn(script, [], opts);
 
   var stream = ss.createStream();
   ss(socket).emit('build', stream);
