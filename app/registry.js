@@ -1,5 +1,9 @@
 var socketio = require('socket.io');
 
+function sample(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function start() {
   var io = socketio.listen(3010);
 
@@ -33,7 +37,7 @@ function start() {
           server.emit('agents', { url: data.url, agents: agents.length });
 
           console.log('Asking agent %s to do the build', agents[0].id);
-          agents[0].emit('run', data);
+          sample(agents).emit('run', data);
         } else {
           console.log('There are no agents that can build %s', data.url);
           server.emit('noAgents', data.url);
