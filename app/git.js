@@ -1,6 +1,7 @@
 var fs = require('fs'),
     exec = require('child_process').exec,
     path = require('path'),
+    url = require('url'),
     sys = require('sys');
 
 function puts(error, stdout, stderr) {
@@ -11,7 +12,7 @@ function puts(error, stdout, stderr) {
 }
 
 function pullOrClone(repoUrl, callback) {
-  var repoPath = path.join('.audrey', 'repos',
+  var repoPath = path.join(process.cwd(), '.audrey', 'repos',
     url.parse(repoUrl).pathname.substring(1));
 
   function doCallback(err, stdout, stderr) {
