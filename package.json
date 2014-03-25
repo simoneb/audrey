@@ -12,6 +12,7 @@
   "dependencies": {
     "socket.io": "~0.9.16",
     "socket.io-client": "~0.9.16",
-    "yaml": "~0.2.3"
+    "yaml": "~0.2.3",
+    "socket.io-stream": "~0.5.3"
   }
 }

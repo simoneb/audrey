@@ -1,5 +1,6 @@
 var io_client = require('socket.io-client'),
     socketio = require('socket.io'),
+    ss = require('socket.io-stream'),
     git = require('./git')
     path = require('path'),
     config = require('../audrey.json').server,
@@ -41,6 +42,10 @@ function start() {
 
     agent.on('message', function(message) {
       console.log("Message from %s: %s", agent.id, message);
+    });
+
+    ss(agent).on('build', function(stream) {
+      stream.pipe(process.stdout);
     });
 
     agent.on('disconnect', function() {
