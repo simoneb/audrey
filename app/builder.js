@@ -1,10 +1,15 @@
 var spawn = require('child_process').spawn,
-    path = require('path');
+    path = require('path'),
+    isWindows = (/windows/i).test(require('os').type());
 
 function startBuild(data, repoPath, socket, callback) {
   var cwd = path.join(process.cwd(), repoPath);
 
-  var command = spawn(process.env.comspec, ['/c', data.command], { cwd: cwd });
+  if(isWindows)
+    var command = spawn(process.env.comspec, ['/c', data.command], { cwd: cwd });
+  else
+    var command = spawn(data.command, [], { cwd: cwd });
+
   command.stderr.setEncoding('utf8');
   command.stdout.setEncoding('utf8');
 
