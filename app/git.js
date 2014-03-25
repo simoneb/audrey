@@ -10,11 +10,13 @@ function puts(error, stdout, stderr) {
   if(stderr) sys.puts(stderr);
 }
 
-function pullOrClone(repoUrl, repoPath, callback) {
+function pullOrClone(repoUrl, callback) {
+  var repoPath = path.join('.audrey', 'repos',
+    url.parse(repoUrl).pathname.substring(1));
+
   function doCallback(err, stdout, stderr) {
     puts(err, stdout, stderr);
-
-    if(!err) callback();
+    callback(err, repoPath);
   }
 
   if(fs.existsSync(repoPath)) {

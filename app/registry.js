@@ -12,6 +12,11 @@ function start() {
           agent.join(repo);
         });
       });
+      agent.on('unregister', function (data) {
+        console.log('Agent %s leaving room %s', agent.id, data.repoUrl);
+        agent.leave(data.repoUrl);
+      });
+
       agent.on('disconnect', function() {
         console.log('Agent %s has disconnected', agent.id);
       });
@@ -28,7 +33,7 @@ function start() {
           server.emit('agents', { url: data.url, agents: agents.length });
 
           console.log('Asking agent %s to do the build', agents[0].id);
-          agents[0].emit('run', { url: data.url, serverUrl: data.serverUrl });
+          agents[0].emit('run', data);
         } else {
           console.log('There are no agents that can build %s', data.url);
           server.emit('noAgents', data.url);
@@ -37,4 +42,4 @@ function start() {
     });
 }
 
-exports.start = start;
+module.exports = start;

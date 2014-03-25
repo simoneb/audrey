@@ -2,10 +2,9 @@ var io_client = require('socket.io-client'),
     socketio = require('socket.io'),
     git = require('./git')
     path = require('path'),
-    config = require('./config').server,
+    config = require('../audrey.json').server,
     url = require('url'),
-    yaml = require('yaml'),
-    repositories = {};
+    yaml = require('yaml');
 
 function start() {
   var io = socketio.listen(parseInt(url.parse(config.url).port));
@@ -14,23 +13,18 @@ function start() {
   console.log('Server configuration:');
   console.dir(config);
 
-  function makeBuildRequest(url) {
-    return function() {
-      console.log('Requesting to build %s', url);
-      registry.emit('run', { url: url, serverUrl: config.url });
-    };
-  }
-
   registry.on('connect', function(){
     console.log('Connected to registry at %s', config.registry);
 
-    config.repositories.forEach(function(r) {
-      var repo = repositories[r] = {
-        url: r,
-        path: path.join('.audrey', 'repos', url.parse(r).pathname.substring(1))
-      };
-
-      git.pullOrClone(repo.url, repo.path, makeBuildRequest(repo.url));
+    config.repositories.forEach(function(repoUrl) {
+      git.pullOrClone(repoUrl, function (err, repoPath) {
+        console.log('Requesting to build %s', repoUrl);
+        registry.emit('run', {
+          url: repoUrl,
+          serverUrl: config.url,
+          command: 'runbuild'
+        });
+      });
     });
   });
 
@@ -39,15 +33,16 @@ function start() {
   });
 
   registry.on('agents', function(data){
-    console.log('There are available agents for %s:', data.url);
-    console.dir(data.agents);
+    console.log('There are available agents for %s: %d', data.url, data.agents);
   });
 
   io.on('connection', function(agent) {
-    console.log('Received connection from agent %s to build %s', agent.id, agent.url);
+    console.log('Received connection from agent %s', agent.id);
+
     agent.on('message', function(message) {
-      console.log("message from %s: %s", agent.id, message);
+      console.log("Message from %s: %s", agent.id, message);
     });
+
     agent.on('disconnect', function() {
       console.log('Agent %s disconnected', agent.id);
     })
@@ -55,4 +50,4 @@ function start() {
 
 };
 
-exports.start = start;
+module.exports = start;

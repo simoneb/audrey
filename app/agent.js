@@ -1,9 +1,9 @@
 var io_client = require('socket.io-client'),
     git = require('./git')
+    builder = require('./builder')
     path = require('path'),
-    config = require('./config').agent,
-    url = require('url'),
-    repositories = {};
+    config = require('../audrey.json').agent,
+    url = require('url');
 
 function start() {
   console.log('Connecting to registry at %s...', config.registry);
@@ -19,16 +19,26 @@ function start() {
   });
 
   registry.on('run', function(data) {
+    console.log('Received request to build %s', data.url);
     var server = io_client.connect(data.serverUrl);
 
     server.on('connect', function() {
       console.log('Connected to server %s to build %s', data.serverUrl, data.url);
-      server.send('Build of ' + data.url +' successful');
-      server.disconnect();
+      registry.emit('unregister', { repoUrl: data.url });
+
+      git.pullOrClone(data.url, function(err, repoPath) {
+        if(err) {
+          server.emit('message', 'Error cloning or updating repo %s: %s', data.url, err);
+        }
+        builder.startBuild(data, repoPath, server, function() {
+          server.disconnect();
+        });
+      });
     });
 
     server.on('disconnect', function(){
       console.log('Disconnected from server %s', data.serverUrl);
+      registry.emit('register', [data.url]);
     });
 
     server.on('error', function(err) {
@@ -38,4 +48,4 @@ function start() {
   });
 };
 
-exports.start = start;
+module.exports = start;
