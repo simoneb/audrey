@@ -5,8 +5,10 @@ var spawn = require('child_process').spawn,
 function startBuild(data, repoPath, socket, callback) {
   var cwd = path.join(process.cwd(), repoPath);
 
+  // don't we need to wrap the command in quotes on windows?
   if(isWindows)
-    var command = spawn(process.env.comspec, ['/c', data.command], { cwd: cwd });
+    var command = spawn(process.env.comspec,
+      ['/c', data.command.replace('/', "\\")], { cwd: cwd });
   else
     var command = spawn(data.command, [], { cwd: cwd });
 
