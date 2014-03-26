@@ -6,7 +6,7 @@ function sample(arr) {
 }
 
 function start() {
-  var io = socketio.listen(3010);
+  var io = socketio.listen(3010, { 'log level': 1 });
 
   io.of('/agent')
       .on('connection', function (agent) {
@@ -21,6 +21,16 @@ function start() {
               agent.join(registration.repoUrl);
             });
           }
+        });
+        agent.on('markBusy', function () {
+          agent.set('_busy', true, function () {
+            console.log('Agent %s is now busy', agent.id);
+          });
+        });
+        agent.on('markFree', function () {
+          agent.set('_busy', false, function () {
+            console.log('Agent %s is now available', agent.id);
+          });
         });
         agent.on('unregister', function (data) {
           console.log('Agent %s leaving room %s', agent.id, data.repoUrl);
@@ -40,13 +50,20 @@ function start() {
           var agents = io.of('/agent').clients(data.repoUrl);
 
           async.detect(agents, function (agent, callback) {
-                async.every(data.cell.requirements, function (reqName, cb) {
-                  console.log('Checking if agent %s satisfies requirement "%s"', agent.id, reqName);
-                  agent.get(reqName, function (err, satisfies) {
-                    if (err) cb(false);
-                    cb(satisfies);
-                  });
-                }, callback);
+                agent.get('_busy', function (err, busy) {
+                  if (err || busy) {
+                    console.log('Agent %s is busy', agent.id);
+                    callback(false);
+                  } else {
+                    async.every(data.cell.requirements, function (reqName, cb) {
+                      console.log('Checking if agent %s satisfies requirement "%s"', agent.id, reqName);
+                      agent.get(reqName, function (err, satisfies) {
+                        if (err) cb(false);
+                        cb(satisfies);
+                      });
+                    }, callback);
+                  }
+                });
               },
               function (agent) {
                 if (!agent) {

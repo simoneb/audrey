@@ -9,7 +9,7 @@ var io_client = require('socket.io-client'),
     url = require('url');
 
 function start() {
-  var io = socketio.listen(config.port);
+  var io = socketio.listen(config.port, { 'log level': 1 });
   console.log('Connecting to registry');
   var registry = io_client.connect(config.registry);
   console.log('Server configuration:');
