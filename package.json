@@ -12,8 +12,8 @@
   "dependencies": {
     "socket.io": "~0.9.16",
     "socket.io-client": "~0.9.16",
-    "yaml": "~0.2.3",
     "socket.io-stream": "~0.5.3",
-    "async": "~0.2.10"
+    "async": "~0.2.10",
+    "lodash": "~2.4.1"
   }
 }

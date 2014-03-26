@@ -15,7 +15,7 @@ function start() {
             console.log('Agent %s joining room %s', agent.id, registration.repoUrl);
             agent.join(registration.repoUrl);
           } else {
-            console.log('Agent %s joining room %s satisfying requirement %s',
+            console.log('Agent %s joining room %s satisfying requirement "%s"',
                 agent.id, registration.repoUrl, registration.requirement);
             agent.set(registration.requirement, true, function () {
               agent.join(registration.repoUrl);
@@ -40,10 +40,10 @@ function start() {
           var agents = io.of('/agent').clients(data.repoUrl);
 
           async.detect(agents, function (agent, callback) {
-                async.every(data.cell.requirements, function(reqName, cb) {
-                  console.log('Checking if agent %s satisfies requirement %s', agent.id, reqName);
-                  agent.get(reqName, function(err, satisfies) {
-                    if(err) cb(false);
+                async.every(data.cell.requirements, function (reqName, cb) {
+                  console.log('Checking if agent %s satisfies requirement "%s"', agent.id, reqName);
+                  agent.get(reqName, function (err, satisfies) {
+                    if (err) cb(false);
                     cb(satisfies);
                   });
                 }, callback);
@@ -56,18 +56,6 @@ function start() {
                   agent.emit('run', data);
                 }
               });
-
-          return;
-
-          if (agents && agents.length) {
-            server.emit('agents', { url: data.url, agents: agents.length });
-
-            console.log('Asking agent %s to do the build', agents[0].id);
-            sample(agents).emit('run', data);
-          } else {
-            console.log('There are no agents that can build %s', data.url);
-            server.emit('noAgents', data.url);
-          }
         });
       });
 }

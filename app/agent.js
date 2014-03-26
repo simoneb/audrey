@@ -2,12 +2,44 @@ var io_client = require('socket.io-client'),
     git = require('./git'),
     os = require('os'),
     fs = require('fs'),
+    net = require('net'),
+    url = require('url'),
     exec = require('child_process').exec,
     builder = require('./builder'),
     path = require('path'),
     config = require('../audrey.json').agent,
     async = require('async'),
     isWindows = (/windows/i).test(os.type());
+
+function runBuild(serverUrl, data) {
+  var server = io_client.connect(serverUrl, {'force new connection': true });
+
+  server.on('connect', function () {
+    console.log('Connected to server %s to build %s', serverUrl, data.repoUrl);
+
+    git.pullOrClone(data.repoUrl, function (err, repoPath) {
+      if (err) {
+        server.emit('message', 'Error cloning or updating repo %s: %s', data.repoUrl, err);
+      }
+      builder.startBuild(data, repoPath, server, function () {
+        server.disconnect();
+      });
+    });
+  });
+
+  server.on('connect_failed', function () {
+    console.error("Couldn't connect to server %s", serverUrl);
+  });
+
+  server.on('disconnect', function () {
+    console.log('Disconnected from server %s', serverUrl);
+  });
+
+  server.on('error', function (err) {
+    console.error('Error when communicating with server %s about %s\n%s',
+        serverUrl, data.repoUrl, err);
+  });
+}
 
 function start() {
   console.log('Connecting to registry at %s...', config.registry);
@@ -31,7 +63,7 @@ function start() {
           registry.emit('register', { repoUrl: repoUrl });
         } else {
           console.log('Checking requirements');
-          for (reqName in audreyConfig.requirements) {
+          for (var reqName in audreyConfig.requirements) {
             (function (name) {
               console.log('Checking requirement %s', name);
               async.every(audreyConfig.requirements[name], function (req, callback) {
@@ -100,39 +132,32 @@ function start() {
     console.error('Error when communicating with registry\n%s', err);
   });
 
+
   registry.on('run', function (data) {
     console.log('Received request to build %s', data.repoUrl);
 
-    var server = io_client.connect(data.serverUrl, {'force new connection': true });
+    async.detect(data.serverUrls, function(serverUrl, callback){
+      var parsed = url.parse(serverUrl),
+          port = parsed.port,
+          hostname = parsed.hostname;
 
-    server.on('connect', function () {
-      console.log('Connected to server %s to build %s', data.serverUrl, data.repoUrl);
-      //registry.emit('unregister', { repoUrl: data.repoUrl });
+      console.log('Trying to connect to %s on port %d', hostname, port);
 
-      git.pullOrClone(data.repoUrl, function (err, repoPath) {
-        if (err) {
-          server.emit('message', 'Error cloning or updating repo %s: %s', data.repoUrl, err);
-        }
-        builder.startBuild(data, repoPath, server, function () {
-          server.disconnect();
-        });
+      var client = net.createConnection(port, hostname, function(){
+        console.log('Successfully connected to %s on port %d', hostname, port);
+        callback(true);
       });
-    });
 
-    server.on('connect_failed', function () {
-      console.error("Couldn't connect to server %s", data.serverUrl);
-    });
-
-    server.on('disconnect', function () {
-      console.log('Disconnected from server %s', data.serverUrl);
-      //registry.emit('register', { repoUrl: data.repoUrl });
-    });
-
-    server.on('error', function (err) {
-      console.error('Error when communicating with server %s about %s\n%s',
-          data.serverUrl, data.url, err);
+      client.on('error', function(){ callback(false); });
+      client.on('timeout', function(){ callback(false); });
+    }, function(serverUrl) {
+      if(serverUrl) {
+        runBuild(serverUrl, data);
+      } else {
+        console.error('Server was not reachable at any of the urls tried');
+      }
     });
   });
-};
+}
 
 module.exports = start;

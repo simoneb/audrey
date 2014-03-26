@@ -2,14 +2,14 @@ var io_client = require('socket.io-client'),
     socketio = require('socket.io'),
     ss = require('socket.io-stream'),
     git = require('./git')
+    net = require('./net')
     fs = require('fs'),
     path = require('path'),
     config = require('../audrey.json').server,
-    url = require('url'),
-    yaml = require('yaml');
+    url = require('url');
 
 function start() {
-  var io = socketio.listen(parseInt(url.parse(config.url).port));
+  var io = socketio.listen(config.port);
   console.log('Connecting to registry');
   var registry = io_client.connect(config.registry);
   console.log('Server configuration:');
@@ -34,7 +34,9 @@ function start() {
         audreyConfig.matrix.forEach(function(cell) {
           registry.emit('run', {
             repoUrl: repoUrl,
-            serverUrl: config.url,
+            serverUrls: net.getLocalAddresses().map(function(addr) {
+              return 'http://' + addr + ':' + config.port;
+            }),
             cell: cell
           });
         });

@@ -1,6 +1,6 @@
 {
   "server": {
-    "url": "http://10.18.21.1:3011",
+    "port": 3011,
     "registry": "http://10.18.21.1:3010/server",
     "repositories": [
       "https://github.com/simoneb/nunit-framework.git"
