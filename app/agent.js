@@ -1,16 +1,13 @@
 var io_client = require('socket.io-client'),
     git = require('./git'),
     os = require('os'),
-    fs = require('fs'),
-    net = require('net'),
-    url = require('url'),
+    net = require('./net'),
     exec = require('child_process').exec,
     builder = require('./builder'),
     path = require('path'),
     config = require('../audrey.json').agent,
     async = require('async'),
-    isWindows = (/windows/i).test(os.type()),
-    which = isWindows ? 'where' : 'which';
+    u = require('./util');
 
 function checkRequirement(registry, reqName, requirement, repoUrl) {
   console.log('Checking satisfiability of requirement "%s"', reqName);
@@ -20,14 +17,14 @@ function checkRequirement(registry, reqName, requirement, repoUrl) {
       case 'which':
         console.log('Checking requirement type "which"');
 
-        exec(which + ' ' + req.input, function (err, stdo, stde) {
+        exec(u.which + ' ' + req.input, function (err) {
           callback(!err);
         });
         break;
       case 'cmd':
         console.log('Checking requirement type "cmd"');
 
-        exec(req.input, function (err, stdo, stde) {
+        exec(req.input, function (err, stdo) {
           if (err) callback(false);
 
           switch (Object.prototype.toString.call(req.output)) {
@@ -88,6 +85,7 @@ function runBuild(serverUrl, data, registry) {
       }
       builder.startBuild(data, repoPath, server, function () {
         server.disconnect();
+        registry.emit('markFree');
       });
     });
   });
@@ -99,7 +97,6 @@ function runBuild(serverUrl, data, registry) {
 
   server.on('disconnect', function () {
     console.log('Disconnected from server %s', serverUrl);
-    registry.emit('markFree');
   });
 
   server.on('error', function (err) {
@@ -118,24 +115,22 @@ function start() {
 
     config.repositories.forEach(function (repoUrl) {
       git.pullOrClone(repoUrl, function (err, repoPath) {
-        var audreyConfigFile = path.join(repoPath, '.audrey.js');
+        if (err) throw err;
 
-        if (!fs.existsSync(audreyConfigFile)) {
-          throw new Error(audreyConfigFile + ' does not exist');
-        }
+        u.getAudreyConfig(repoPath, function (err, config) {
+          if (err) throw err;
 
-        var audreyConfig = require(audreyConfigFile);
+          if (!config.requirements) {
+            console.log('Registering without requirements');
+            registry.emit('register', { repoUrl: repoUrl });
+          } else {
+            console.log('Checking requirements');
 
-        if (!audreyConfig.requirements) {
-          console.log('Registering without requirements');
-          registry.emit('register', { repoUrl: repoUrl });
-        } else {
-          console.log('Checking requirements "%s"', audreyConfig.requirements);
-
-          for (var reqName in audreyConfig.requirements) {
-            checkRequirement(registry, reqName, audreyConfig.requirements[reqName], repoUrl);
+            for (var reqName in config.requirements) {
+              checkRequirement(registry, reqName, config.requirements[reqName], repoUrl);
+            }
           }
-        }
+        });
       });
     });
   });
@@ -147,32 +142,11 @@ function start() {
   registry.on('run', function (data) {
     console.log('Received request to build %s', data.repoUrl);
 
-    registry.emit('markBusy');
-
-    async.detect(data.serverUrls, function (serverUrl, callback) {
-      var parsed = url.parse(serverUrl),
-          port = parsed.port,
-          hostname = parsed.hostname;
-
-      console.log('Trying to reach %s on port %d', hostname, port);
-
-      var client = net.createConnection(port, hostname, function () {
-        console.log('Successfully reached %s on port %d', hostname, port);
-        callback(true);
-      });
-
-      client.on('error', function () {
-        callback(false);
-      });
-      client.on('timeout', function () {
-        callback(false);
-      });
-    }, function (serverUrl) {
+    net.firstReachableUrl(data.serverUrls, function (serverUrl) {
       if (serverUrl) {
         runBuild(serverUrl, data, registry);
       } else {
-        registry.emit('markFree');
-        console.error('Server was not reachable at any of the urls tried');
+        console.error("Couldn't reach server at any of the attempted urls");
       }
     });
   });

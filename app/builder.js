@@ -4,56 +4,54 @@ var spawn = require('child_process').spawn,
     crypto = require('crypto'),
     ss = require('socket.io-stream'),
     path = require('path'),
-    isWindows = (/windows/i).test(os.type());
+    u = require('./util');
+
+function startBuildWithConfig(data, repoPath, socket, callback, config) {
+  var randomName = crypto.randomBytes(8).readUInt32LE(0) + '',
+      tempScript = path.join(os.tmpdir(), randomName),
+      scriptContents = config.script.replace(/\$(\w+)/g, function (match, property) {
+        return data.cell.env[property];
+      });
+
+  console.log('Command to be executed is %s', scriptContents);
+
+  if (u.isWindows)
+    tempScript += '.cmd';
+
+  fs.writeFile(tempScript, scriptContents, { mode: 493 }, function(err) {
+    if(err) throw err;
+
+    var command = spawn(tempScript, [], {
+      cwd: repoPath,
+      stdio: 'pipe'
+    });
+
+    var stream = ss.createStream();
+    ss(socket).emit('build', stream);
+
+    command.stderr.pipe(stream);
+    command.stdout.pipe(stream);
+    //command.stderr.pipe(process.stderr);
+    //command.stdout.pipe(process.stdout);
+
+    command.on('close', function (code) {
+      socket.emit('message', 'child process exited with code ' + code);
+      callback();
+    });
+    command.on('error', function (err) {
+      socket.emit('message', err.toString());
+      console.error(err);
+      callback();
+    });
+  });
+}
 
 function startBuild(data, repoPath, socket, callback) {
-  var opts = {
-        cwd: repoPath,
-        stdio: 'pipe'
-      },
-      randomName = crypto.randomBytes(8).readUInt32LE(0) + '',
-      script = path.join(os.tmpdir(), randomName),
-      audreyConfigFile = path.join(repoPath, '.audrey.js');
+  u.getAudreyConfig(repoPath, function (err, config) {
+    if (err) throw err;
 
-  if(!fs.existsSync(audreyConfigFile)) {
-    console.error('No audrey configuration file');
-    callback();
-    return;
-  } else {
-    var audreyConfig = require(audreyConfigFile);
-  }
-
-  var command = audreyConfig.script.replace(/\$(\w+)/g, function(match, property) {
-    return data.cell.env[property];
+    startBuildWithConfig(data, repoPath, socket, callback, config);
   });
-
-  console.log('Command to be executed is %s', command);
-
-  if (isWindows)
-    script += '.cmd';
-
-  fs.writeFileSync(script, command);
-  fs.chmodSync(script, '755');
-
-  var command = spawn(script, [], opts);
-
-  var stream = ss.createStream();
-  ss(socket).emit('build', stream);
-
-  command.stderr.pipe(stream);
-  command.stdout.pipe(stream);
-  command.stderr.pipe(process.stderr);
-  command.stdout.pipe(process.stdout);
-
-  command.on('close', function (code) {
-    socket.emit('message', 'child process exited with code ' + code);
-    callback();
-  });
-  command.on('error', function (err) {
-    socket.emit('message', err.toString());
-    console.error(err);
-    callback();
-  })
 }
 
 exports.startBuild = startBuild;
