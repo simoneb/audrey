@@ -18,13 +18,20 @@ function startBuildWithConfig(data, repoPath, socket, callback, config) {
   if (u.isWindows)
     tempScript += '.cmd';
 
-  fs.writeFile(tempScript, scriptContents, { mode: 493 }, function(err) {
-    if(err) throw err;
+  fs.writeFile(tempScript, scriptContents, { mode: 493 }, function (err) {
+    if (err) throw err;
 
-    var command = spawn(tempScript, [], {
-      cwd: repoPath,
-      stdio: 'pipe'
-    });
+    var start = new Date(),
+        command = spawn(tempScript, [], {
+          cwd: repoPath,
+          stdio: 'pipe'
+        }),
+        timeoutCheck = setInterval(function () {
+          if ((new Date() - start) / 1000 > data.timeoutSeconds || 180) {
+            console.log('Terminating build due to timeout');
+            command.kill('SIGTERM');
+          }
+        }, 10000);
 
     var stream = ss.createStream();
     ss(socket).emit('build', stream);
@@ -35,10 +42,13 @@ function startBuildWithConfig(data, repoPath, socket, callback, config) {
     //command.stdout.pipe(process.stdout);
 
     command.on('close', function (code) {
-      socket.emit('message', 'child process exited with code ' + code);
+      clearTimeout(timeoutCheck);
+      console.log('Child process exited with code %s', code);
+      socket.emit('message', 'Child process exited with code ' + code);
       callback();
     });
     command.on('error', function (err) {
+      clearTimeout(timeoutCheck);
       socket.emit('message', err.toString());
       console.error(err);
       callback();
