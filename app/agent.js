@@ -76,6 +76,8 @@ function checkRequirement(registry, reqName, requirement, repoUrl) {
 function runBuild(serverUrl, data, registry) {
   var server = io_client.connect(serverUrl, {'force new connection': true });
 
+  registry.emit('markBusy');
+
   server.on('connect', function () {
     console.log('Connected to server %s to build %s', serverUrl, data.repoUrl);
 
@@ -84,6 +86,7 @@ function runBuild(serverUrl, data, registry) {
         server.emit('message', 'Error cloning or updating repo %s\n%s', data.repoUrl, err);
       }
       builder.startBuild(data, repoPath, server, function () {
+        console.log('Build completed');
         server.disconnect();
         registry.emit('markFree');
       });
