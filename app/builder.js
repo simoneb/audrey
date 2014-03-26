@@ -21,17 +21,18 @@ function startBuildWithConfig(data, repoPath, socket, callback, config) {
   fs.writeFile(tempScript, scriptContents, { mode: 493 }, function (err) {
     if (err) throw err;
 
-    var start = new Date(),
+    var timeoutSeconds = data.cell.timeoutSeconds || config.timeoutSeconds || 60,
+        start = new Date(),
         command = spawn(tempScript, [], {
           cwd: repoPath,
           stdio: 'pipe'
         }),
         timeoutCheck = setInterval(function () {
-          if ((new Date() - start) / 1000 > data.timeoutSeconds || 180) {
+          if (((new Date() - start) / 1000) > timeoutSeconds) {
             console.log('Terminating build due to timeout');
-            command.kill('SIGTERM');
+            command.kill();
           }
-        }, 10000);
+        }, 20 * 1000);
 
     var stream = ss.createStream();
     ss(socket).emit('build', stream);
@@ -41,9 +42,15 @@ function startBuildWithConfig(data, repoPath, socket, callback, config) {
     //command.stderr.pipe(process.stderr);
     //command.stdout.pipe(process.stdout);
 
-    command.on('close', function (code) {
+    command.on('close', function (code, signal) {
       clearTimeout(timeoutCheck);
-      console.log('Child process exited with code %s', code);
+      console.log('Child process closed with code %s and signal %s', code, signal);
+      socket.emit('message', 'Child process exited with code ' + code);
+      callback();
+    });
+    command.on('exit', function (code, signal) {
+      clearTimeout(timeoutCheck);
+      console.log('Child process exited with code %s and signal %s', code, signal);
       socket.emit('message', 'Child process exited with code ' + code);
       callback();
     });
