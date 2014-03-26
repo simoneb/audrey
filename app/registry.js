@@ -1,8 +1,15 @@
 var socketio = require('socket.io'),
-    async = require('async');
+    async = require('async'),
+    http = require('http');
 
 function start() {
-  var io = socketio.listen(process.env.PORT || 3010, { 'log level': 1 });
+  var server = http.createServer(function(req, res) {
+    res.end("I'm the registry");
+  });
+
+  var io = socketio.listen(server, { 'log level': 1 });
+
+  server.listen(process.env.PORT || 5000);
 
   console.log('registry started');
 
