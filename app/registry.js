@@ -7,7 +7,10 @@ function start() {
     res.end("I'm the registry");
   });
 
-  var io = socketio.listen(server, { 'log level': 1 });
+  var io = socketio.listen(server, {
+    'log level': 1,
+    'transports': ['websocket']
+  });
 
   server.listen(process.env.PORT || 5000);
 
