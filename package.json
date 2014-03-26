@@ -2,12 +2,18 @@
   "name": "audrey",
   "version": "0.0.0",
   "description": "distributed build system",
+  "engines": {
+    "node": "0.10.x"
+  },
   "main": "audrey.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": "https://github.com/simoneb/audrey.git",
-  "author": "Simone Busoli <simone.busoli@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simoneb/audrey.git"
+  },
+  "author": "Simone Busoli",
   "license": "MIT",
   "dependencies": {
     "socket.io": "~0.9.16",
