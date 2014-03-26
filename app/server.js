@@ -6,17 +6,17 @@ var io_client = require('socket.io-client'),
     fs = require('fs'),
     path = require('path'),
     config = require('../audrey.json').server,
-    url = require('url');
+    url = require('url'),
+    registryUrl = "http://audrey.herokuapp.com/server";
 
 function start() {
-  var io = socketio.listen(config.port, { 'log level': 1 });
-  console.log('Connecting to registry');
-  var registry = io_client.connect(config.registry);
-  console.log('Server configuration:');
-  console.dir(config);
+  var io = socketio.listen(config.port, { 'log level': 1 }),
+      registry = io_client.connect(registryUrl);
+
+  console.log('Connecting to registry %s', registryUrl);
 
   registry.on('connect', function(){
-    console.log('Connected to registry at %s', config.registry);
+    console.log('Connected to registry');
 
     config.repositories.forEach(function(repoUrl) {
       git.pullOrClone(repoUrl, function (err, repoPath) {

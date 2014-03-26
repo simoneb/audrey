@@ -1,13 +1,11 @@
 {
   "server": {
     "port": 3011,
-    "registry": "http://audrey.herokuapp.com/server",
     "repositories": [
       "https://github.com/simoneb/nunit-framework.git"
     ]
   },
   "agent": {
-    "registry": "http://audrey.herokuapp.com/agent",
     "repositories": [
       "https://github.com/simoneb/nunit-framework.git"
     ]

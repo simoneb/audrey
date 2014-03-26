@@ -1,17 +1,17 @@
 var os = require('os'),
-    lodash = require('lodash'),
+    _ = require('lodash'),
     net = require('net'),
     url = require('url'),
     async = require('async');
 
 function getLocalAddresses() {
-  return lodash.chain(os.networkInterfaces())
+  return _.chain(os.networkInterfaces())
       .values()
       .flatten()
       .filter(function (e) {
-        return e.family === 'IPv4';
+        return e.family === 'IPv4' && !e.internal;
       })
-      .map(lodash.property('address'))
+      .map(_.property('address'))
       .value();
 }
 
