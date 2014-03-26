@@ -2,7 +2,7 @@ var socketio = require('socket.io'),
     async = require('async');
 
 function start() {
-  var io = socketio.listen(3010, { 'log level': 1 });
+  var io = socketio.listen(process.env.PORT || 3010, { 'log level': 1 });
 
   console.log('registry started');
 
