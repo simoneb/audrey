@@ -74,9 +74,13 @@ function start() {
               },
               function (agent) {
                 if (!agent) {
-                  console.log('No available agent satisfies requirements "%s"', data.cell.requirements);
+                  server.emit('noAgents', data.repoUrl, data.cell.requirements);
+                  console.log('No available agent satisfies requirements %s',
+                      JSON.stringify(data.cell.requirements));
                 } else {
-                  console.log('Agent %s satisfies requirements "%s"', agent.id, data.cell.requirements);
+                  server.emit('agents', data.repoUrl, data.cell.requirements);
+                  console.log('Agent %s satisfies requirements %s',
+                      agent.id, JSON.stringify(data.cell.requirements));
                   agent.emit('run', data);
                 }
               });

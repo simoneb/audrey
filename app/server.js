@@ -42,12 +42,14 @@ function start() {
     });
   });
 
-  registry.on('noAgents', function(url){
-    console.log('There are no agents that can build %s', url);
+  registry.on('noAgents', function(repoUrl, requirements){
+    console.log('No available agent satisfies requirements %s for %s',
+        JSON.stringify(requirements), repoUrl);
   });
 
-  registry.on('agents', function(data){
-    console.log('There are available agents for %s: %d', data.url, data.agents);
+  registry.on('agents', function(repoUrl, requirements){
+    console.log('Found available agent which satisfies requirements %s for %s',
+        JSON.stringify(requirements), repoUrl);
   });
 
   io.on('connection', function(agent) {
