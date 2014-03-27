@@ -1,6 +1,5 @@
 {
   "server": {
-    "address": "95.224.139.30",
     "repositories": [
       "https://github.com/simoneb/nunit-framework.git"
     ]

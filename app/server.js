@@ -4,7 +4,6 @@ var io_client = require('socket.io-client'),
     git = require('./git'),
     net = require('./net'),
     path = require('path'),
-    config = require('../audrey.json').server,
     u = require('./util'),
     util = require('util');
 
@@ -15,12 +14,19 @@ function server(options) {
       registry = io_client.connect(registryUrl);
 
   console.log('Server listening on port %d', port);
+
+  if(options.address) {
+    console.log('Forcing address for agent connection to %s', options.address);
+  } else {
+    console.log('Address for agent connection will be determined using local network interfaces');
+  }
+
   console.log('Connecting to registry %s...', registryUrl);
 
   registry.on('connect', function () {
     console.log('Connected to registry');
 
-    config.repositories.forEach(function (repoUrl) {
+    options.repositories.forEach(function (repoUrl) {
       git.pullOrClone(repoUrl, function (err, repoPath) {
         if (err) throw err;
 
@@ -32,8 +38,8 @@ function server(options) {
           audreyConfig.matrix.forEach(function (cell) {
             registry.emit('run', {
               repoUrl: repoUrl,
-              serverUrls: (config.address ?
-                  [config.address] : net.getLocalAddresses(true)).map(function (addr) {
+              serverUrls: (options.address ?
+                  [options.address] : net.getLocalAddresses(true)).map(function (addr) {
                     return util.format('http://%s:%d', addr, port);
                   }),
               cell: cell

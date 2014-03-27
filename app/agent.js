@@ -5,7 +5,6 @@ var io_client = require('socket.io-client'),
     exec = require('child_process').exec,
     builder = require('./builder'),
     path = require('path'),
-    config = require('../audrey.json').agent,
     async = require('async'),
     u = require('./util');
 
@@ -119,7 +118,7 @@ function agent(options) {
   registry.on('connect', function () {
     console.log('Connected to registry');
 
-    config.repositories.forEach(function (repoUrl) {
+    options.repositories.forEach(function (repoUrl) {
       git.pullOrClone(repoUrl, function (err, repoPath) {
         if (err) throw err;
 

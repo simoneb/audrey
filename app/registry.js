@@ -4,8 +4,8 @@ var socketio = require('socket.io'),
     git = require('./git');
 
 function registry(options) {
-  var server = http.createServer(function(req, res) {
-    git.lastCommitShortHash(function(err, hash) {
+  var server = http.createServer(function (req, res) {
+    git.lastCommitShortHash(function (err, hash) {
       if (err)
         res.end("I'm the registry [can't determine version]");
       else
