@@ -37,4 +37,17 @@ function pullOrClone(repoUrl, callback) {
   }
 }
 
+function lastCommitShortHash(callback) {
+  exec('git log --oneline -1', function(err, out) {
+    if (err) callback(err);
+
+    try {
+      callback(undefined, /^\w+/.exec(out.toString())[0]);
+    } catch(e) {
+      callback(e);
+    }
+  });
+}
+
 exports.pullOrClone = pullOrClone;
+exports.lastCommitShortHash = lastCommitShortHash;

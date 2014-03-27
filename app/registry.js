@@ -1,10 +1,16 @@
 var socketio = require('socket.io'),
     async = require('async'),
-    http = require('http');
+    http = require('http'),
+    git = require('./git');
 
 function start() {
   var server = http.createServer(function(req, res) {
-    res.end("I'm the registry");
+    git.lastCommitShortHash(function(err, hash) {
+      if (err)
+        res.end("I'm the registry [can't determine version]");
+      else
+        res.end("I'm the registry, version " + hash);
+    });
   });
 
   var io = socketio.listen(server, {
