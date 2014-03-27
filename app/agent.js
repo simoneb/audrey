@@ -7,8 +7,7 @@ var io_client = require('socket.io-client'),
     path = require('path'),
     config = require('../audrey.json').agent,
     async = require('async'),
-    u = require('./util'),
-    registryUrl = "http://audrey.herokuapp.com/agent";
+    u = require('./util');
 
 function checkRequirement(registry, reqName, requirement, repoUrl) {
   console.log('Checking satisfiability of requirement "%s"', reqName);
@@ -110,9 +109,9 @@ function runBuild(serverUrl, data, registry) {
   });
 }
 
-function start() {
-  console.log('Connecting to registry %s...', registryUrl);
-  var registry = io_client.connect(registryUrl, { 'log level': 1 });
+function agent(options) {
+  console.log('Connecting to registry %s...', options.registry);
+  var registry = io_client.connect(options.registry, { 'log level': 1 });
 
   registry.on('connect', function () {
     console.log('Connected to registry');
@@ -156,4 +155,4 @@ function start() {
   });
 }
 
-module.exports = start;
+module.exports = agent;

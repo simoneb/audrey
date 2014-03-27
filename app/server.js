@@ -6,14 +6,13 @@ var io_client = require('socket.io-client'),
     path = require('path'),
     config = require('../audrey.json').server,
     u = require('./util'),
-    util = require('util'),
-    registryUrl = "http://audrey.herokuapp.com/server";
+    util = require('util');
 
-function start() {
+function server(options) {
   var io = socketio.listen(config.port, { 'log level': 1 }),
-      registry = io_client.connect(registryUrl);
+      registry = io_client.connect(options.registry);
 
-  console.log('Connecting to registry %s...', registryUrl);
+  console.log('Connecting to registry %s...', options.registry);
 
   registry.on('connect', function () {
     console.log('Connected to registry');
@@ -69,4 +68,4 @@ function start() {
 
 };
 
-module.exports = start;
+module.exports = server;

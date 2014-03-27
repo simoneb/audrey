@@ -20,6 +20,7 @@
     "socket.io-client": "~0.9.16",
     "socket.io-stream": "~0.5.3",
     "async": "~0.2.10",
-    "lodash": "~2.4.1"
+    "lodash": "~2.4.1",
+    "commander": "~2.1.0"
   }
 }
