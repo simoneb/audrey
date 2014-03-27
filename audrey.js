@@ -1,30 +1,29 @@
 var cli = require('commander'),
     _ = require('lodash');
 
-var defaultRegistry = {
-  registry: "http://audrey.herokuapp.com/server"
-};
+var defaultRegistry = "http://audrey.herokuapp.com";
 
-function run(defaults) {
-  return function(options) {
-    require('./app/' + options._name)(_.merge(defaults || {}, options));
-  };
+function run(options) {
+  require('./app/' + options._name)(options);
 }
 
 cli.command('server')
     .description('Starts a server')
-    .option("-r, --registry <url>", "The url of the registry")
-    .action(run(defaultRegistry));
+    .option("-r, --registry <url>", "The url of the registry", defaultRegistry)
+    .option("-p, --port <port>", "Port on which to listen for agent connections", parseInt, 3031)
+    .action(run);
 
 cli.command('agent')
     .description('Starts an agent')
-    .option("-r, --registry <url>", "The url of the registry")
-    .action(run(defaultRegistry));
+    .option("-r, --registry <url>", "The url of the registry", defaultRegistry)
+    .action(run);
 
 cli.command('registry')
     .description('Starts a registry')
-    .action(run());
+    .option("-p, --port <port>", "Port on which to listen for server and agent connections",
+      parseInt, process.env.PORT || 5000)
+    .action(run);
 
 cli.parse(process.argv);
 
-if(!cli.args.length) cli.help();
+if (!cli.args.length) cli.help();

@@ -110,8 +110,10 @@ function runBuild(serverUrl, data, registry) {
 }
 
 function agent(options) {
-  console.log('Connecting to registry %s...', options.registry);
-  var registry = io_client.connect(options.registry, { 'log level': 1 });
+  var registryUrl = u.registryUrl(options.registry, 'agent'),
+      registry = io_client.connect(registryUrl, { 'log level': 1 });
+
+  console.log('Connecting to registry %s...', registryUrl);
 
   registry.on('connect', function () {
     console.log('Connected to registry');

@@ -11,3 +11,6 @@ exports.getAudreyConfig = function(repoPath, callback) {
     callback(e, undefined);
   }
 };
+exports.registryUrl = function(url, namespace) {
+    return url + (url[url.length-1] === '/' ? '' : '/') + namespace;
+};

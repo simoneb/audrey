@@ -3,7 +3,7 @@ var socketio = require('socket.io'),
     http = require('http'),
     git = require('./git');
 
-function start() {
+function registry(options) {
   var server = http.createServer(function(req, res) {
     git.lastCommitShortHash(function(err, hash) {
       if (err)
@@ -18,9 +18,9 @@ function start() {
     'transports': ['websocket']
   });
 
-  server.listen(process.env.PORT || 5000);
+  server.listen(options.port);
 
-  console.log('registry started');
+  console.log('Registry started on port %d', options.port);
 
   io.of('/agent')
       .on('connection', function (agent) {
@@ -94,4 +94,4 @@ function start() {
       });
 }
 
-module.exports = start;
+module.exports = registry;

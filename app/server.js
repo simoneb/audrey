@@ -10,9 +10,11 @@ var io_client = require('socket.io-client'),
 
 function server(options) {
   var io = socketio.listen(config.port, { 'log level': 1 }),
-      registry = io_client.connect(options.registry);
+      registryUrl = u.registryUrl(options.registry, 'server'),
+      registry = io_client.connect(registryUrl);
 
-  console.log('Connecting to registry %s...', options.registry);
+  console.log('Server listening on port %d', options.port);
+  console.log('Connecting to registry %s...', registryUrl);
 
   registry.on('connect', function () {
     console.log('Connected to registry');
