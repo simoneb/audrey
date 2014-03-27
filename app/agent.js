@@ -9,66 +9,67 @@ var io_client = require('socket.io-client'),
     async = require('async'),
     u = require('./util');
 
+function handleRequirementOutput(result, output, callback) {
+  switch (Object.prototype.toString.call(output)) {
+    case '[object RegExp]':
+      var success = output.test(result);
+
+      if (!success)
+        console.warn('%s did not match %s', result, output);
+
+      callback(success);
+      break;
+    case '[object String]':
+      var success = output === result;
+
+      if (!success)
+        console.warn('%s is not equal to %s', result, output);
+
+      callback(success);
+      break;
+    default:
+      console.error('Unrecognized requirement output type "%s"', output);
+      callback(false);
+  }
+}
+
 function checkRequirement(registry, reqName, requirement, repoUrl) {
   console.log('Checking satisfiability of requirement "%s"', reqName);
 
-  async.every(requirement, function (req, callback) {
+  async.rejectSeries(requirement, function (req, callback) {
     switch (req.type) {
       case 'which':
-        console.log('Checking requirement type "which"');
-
-        exec(u.which + ' ' + req.input, function (err) {
+        var cmd = u.which + ' ' + req.input;
+        exec(cmd, function (err) {
+          if (err) console.warn('    %s failed', cmd);
           callback(!err);
         });
         break;
       case 'cmd':
-        console.log('Checking requirement type "cmd"');
-
         exec(req.input, function (err, stdo) {
-          if (err) callback(false);
-
-          switch (Object.prototype.toString.call(req.output)) {
-            case '[object RegExp]':
-              callback(req.output.test(stdo.toString()));
-              break;
-            case '[object String]':
-              callback(req.output === stdo.toString());
-              break;
-            default:
-              console.error('Unrecognized cmd requirement output type "%s"', req.output);
-              callback(false);
+          if (err) {
+            console.warn('%s failed', req.input);
+            callback(false);
+          } else {
+            handleRequirementOutput(stdo.toString(), req.output, callback);
           }
         });
         break;
       case 'js':
-        console.log('Checking requirement type "js"');
         var result = eval(req.input);
 
-        switch (Object.prototype.toString.call(req.output)) {
-          case '[object RegExp]':
-            var test = req.output.test(result);
-            console.log('Requirement input %s checked against %s: %s',
-                result, req.output, test);
-            callback(test);
-            break;
-          case '[object String]':
-            callback(req.output === result);
-            break;
-          default:
-            console.error('Unrecognized js requirement output type "%s"', req.output);
-            callback(false);
-        }
+        handleRequirementOutput(result, req.output, callback);
         break;
       default:
         console.error('Unrecognized requirement type "%s"', req.type);
         callback(false);
     }
-  }, function (satisfied) {
-    if (satisfied) {
+  }, function (unmatched) {
+    if (unmatched.length) {
+      console.log('Requirement "%s" not satisfied', reqName);
+    } else {
       console.log('Requirement "%s" satisfied', reqName);
       registry.emit('register', { repoUrl: repoUrl, requirement: reqName });
-    } else {
-      console.log('Requirement "%s" not satisfied', reqName);
     }
   });
 }
@@ -129,7 +130,7 @@ function agent(options) {
             console.log('Registering without requirements');
             registry.emit('register', { repoUrl: repoUrl });
           } else {
-            console.log('Checking requirements');
+            console.log('Checking all requirements');
 
             for (var reqName in config.requirements) {
               checkRequirement(registry, reqName, config.requirements[reqName], repoUrl);
