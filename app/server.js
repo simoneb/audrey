@@ -7,6 +7,7 @@ var io_client = require('socket.io-client'),
     path = require('path'),
     config = require('../audrey.json').server,
     url = require('url'),
+    u = require('./util'),
     registryUrl = "http://audrey.herokuapp.com/server";
 
 function start() {
@@ -20,24 +21,21 @@ function start() {
 
     config.repositories.forEach(function(repoUrl) {
       git.pullOrClone(repoUrl, function (err, repoPath) {
-        var audreyConfigFile = path.join(repoPath, '.audrey.js');
+        if(err) throw err;
 
-        if(!fs.existsSync(audreyConfigFile)) {
-          console.error("Repository %s does not have a '.audrey.js' configuration file");
-          return;
-        }
+        u.getAudreyConfig(repoPath, function(err, audreyConfig) {
+          if(err) throw err;
 
-        var audreyConfig = require(audreyConfigFile);
+          console.log('Requesting to build %s', repoUrl);
 
-        console.log('Requesting to build %s', repoUrl);
-
-        audreyConfig.matrix.forEach(function(cell) {
-          registry.emit('run', {
-            repoUrl: repoUrl,
-            serverUrls: net.getLocalAddresses().map(function(addr) {
-              return 'http://' + addr + ':' + config.port;
-            }),
-            cell: cell
+          audreyConfig.matrix.forEach(function(cell) {
+            registry.emit('run', {
+              repoUrl: repoUrl,
+              serverUrls: net.getLocalAddresses(true).map(function(addr) {
+                return 'http://' + addr + ':' + config.port;
+              }),
+              cell: cell
+            });
           });
         });
       });

@@ -4,12 +4,12 @@ var os = require('os'),
     url = require('url'),
     async = require('async');
 
-function getLocalAddresses() {
+function getLocalAddresses(inclInternal) {
   return _.chain(os.networkInterfaces())
       .values()
       .flatten()
       .filter(function (e) {
-        return e.family === 'IPv4' && !e.internal;
+        return e.family === 'IPv4' && (inclInternal || !e.internal);
       })
       .map(_.property('address'))
       .value();
