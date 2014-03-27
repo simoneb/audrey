@@ -9,11 +9,12 @@ var io_client = require('socket.io-client'),
     util = require('util');
 
 function server(options) {
-  var io = socketio.listen(config.port, { 'log level': 1 }),
-      registryUrl = u.registryUrl(options.registry, 'server'),
+  var registryUrl = u.registryUrl(options.registry, 'server'),
+      port = options.port,
+      io = socketio.listen(port, { 'log level': 1 }),
       registry = io_client.connect(registryUrl);
 
-  console.log('Server listening on port %d', options.port);
+  console.log('Server listening on port %d', port);
   console.log('Connecting to registry %s...', registryUrl);
 
   registry.on('connect', function () {
@@ -31,9 +32,10 @@ function server(options) {
           audreyConfig.matrix.forEach(function (cell) {
             registry.emit('run', {
               repoUrl: repoUrl,
-              serverUrls: net.getLocalAddresses(true).map(function (addr) {
-                return util.format('http://%s:%d', addr, config.port);
-              }),
+              serverUrls: (config.address ?
+                  [config.address] : net.getLocalAddresses(true)).map(function (addr) {
+                    return util.format('http://%s:%d', addr, port);
+                  }),
               cell: cell
             });
           });
