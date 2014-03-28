@@ -1,3 +1,4 @@
 node_modules/
 .idea/
 .audrey
+bower_components/

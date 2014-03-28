@@ -27,6 +27,7 @@
     "lodash": "~2.4.1",
     "commander": "~2.1.0",
     "express": "~3.5.1",
-    "cli-table": "~0.3.0"
+    "cli-table": "~0.3.0",
+    "ejs": "~1.0.0"
   }
 }
