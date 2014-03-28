@@ -24,6 +24,7 @@ function pullOrClone(repoUrl, callback) {
     console.log('Updating repo at %s', repoPath);
     exec("git pull --all", { cwd: repoPath }, doCallback);
   } else {
+    // TODO: npm install makedirp
     var parts = '';
     repoPath.split(path.sep).forEach(function(p) {
       parts += p + path.sep;

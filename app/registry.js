@@ -1,23 +1,24 @@
-var socketio = require('socket.io'),
+var ioOpts = {
+      'log level': 1,
+      'transports': ['websocket']
+    },
+    app = require('express')(),
+    server = require('http').createServer(app),
+    io = require('socket.io').listen(server, ioOpts),
     async = require('async'),
-    http = require('http'),
     git = require('./git');
 
 function registry(options) {
-  var app = http.createServer(function (req, res) {
+  app.get('/', function (req, res) {
     git.lastCommitShortHash(function (err, hash) {
       if (err)
         res.end("I'm the registry [can't determine version]");
       else
         res.end("I'm the registry, version " + hash);
     });
-  }).listen(options.port);
-
-  var io = socketio.listen(app, {
-    'log level': 1,
-    'transports': ['websocket']
   });
 
+  server.listen(options.port);
   console.log('Registry started on port %d', options.port);
 
   io.of('/agent')

@@ -1,1 +1,1 @@
-web: node audrey.js registry
+web: node audrey registry
