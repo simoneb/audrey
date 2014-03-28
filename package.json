@@ -17,6 +17,7 @@
   "bin": {
     "audrey": "./audrey"
   },
+  "preferGlobal": true,
   "license": "MIT",
   "dependencies": {
     "socket.io": "~0.9.16",
