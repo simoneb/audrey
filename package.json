@@ -25,6 +25,7 @@
     "async": "~0.2.10",
     "lodash": "~2.4.1",
     "commander": "~2.1.0",
-    "express": "~3.5.1"
+    "express": "~3.5.1",
+    "cli-table": "~0.3.0"
   }
 }

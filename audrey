@@ -24,7 +24,7 @@ function list(str) {
 
 function run(config) {
   return function (options) {
-    require('./app/' + options._name)(_.merge(config || {}, options));
+    require('./lib/' + options._name)(_.merge(config || {}, options));
   };
 }
 
