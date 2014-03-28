@@ -32,7 +32,7 @@ function handleRequirementOutput(result, output, callback) {
   }
 }
 
-function checkRequirement(registry, reqName, requirement, repoUrl) {
+function checkRequirement(registry, reqName, requirement, repoUrl, outercb) {
   console.log('Checking satisfiability of requirement "%s"', reqName);
 
   async.rejectSeries(requirement, function (req, callback) {
@@ -70,6 +70,8 @@ function checkRequirement(registry, reqName, requirement, repoUrl) {
       console.log('Requirement "%s" satisfied', reqName);
       registry.emit('register', { repoUrl: repoUrl, requirement: reqName });
     }
+
+    outercb();
   });
 }
 
@@ -110,6 +112,11 @@ function runBuild(serverUrl, data, registry) {
 }
 
 function agent(options) {
+  if (!options.repositories.length) {
+    console.error('There are no repositories to build');
+    process.exit(0);
+  }
+
   var registryUrl = u.registryUrl(options.registry, 'agent'),
       registry = io_client.connect(registryUrl, { 'log level': 1 });
 
@@ -131,9 +138,11 @@ function agent(options) {
           } else {
             console.log('Checking all requirements');
 
-            for (var reqName in config.requirements) {
-              checkRequirement(registry, reqName, config.requirements[reqName], repoUrl);
-            }
+            async.eachSeries(Object.keys(config.requirements), function (reqName, callback) {
+              checkRequirement(registry, reqName, config.requirements[reqName], repoUrl, callback);
+            }, function () {
+              console.log('Ready to accept build requests');
+            });
           }
         });
       });

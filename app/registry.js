@@ -4,21 +4,19 @@ var socketio = require('socket.io'),
     git = require('./git');
 
 function registry(options) {
-  var server = http.createServer(function (req, res) {
+  var app = http.createServer(function (req, res) {
     git.lastCommitShortHash(function (err, hash) {
       if (err)
         res.end("I'm the registry [can't determine version]");
       else
         res.end("I'm the registry, version " + hash);
     });
-  });
+  }).listen(options.port);
 
-  var io = socketio.listen(server, {
+  var io = socketio.listen(app, {
     'log level': 1,
     'transports': ['websocket']
   });
-
-  server.listen(options.port);
 
   console.log('Registry started on port %d', options.port);
 
@@ -31,24 +29,23 @@ function registry(options) {
           } else {
             console.log('Agent %s registering for %s satisfying requirement "%s"',
                 agent.id, registration.repoUrl, registration.requirement);
+
             agent.set(registration.requirement, true, function () {
               agent.join(registration.repoUrl);
             });
           }
         });
+
         agent.on('markBusy', function () {
           agent.set('_busy', true, function () {
             console.log('Agent %s is now busy', agent.id);
           });
         });
+
         agent.on('markFree', function () {
           agent.set('_busy', false, function () {
             console.log('Agent %s is now available', agent.id);
           });
-        });
-        agent.on('unregister', function (data) {
-          console.log('Agent %s unregistered for %s', agent.id, data.repoUrl);
-          agent.leave(data.repoUrl);
         });
 
         agent.on('disconnect', function () {
