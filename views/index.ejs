@@ -14,10 +14,33 @@
     <![endif]-->
 </head>
 <body>
-<h1>I'm the registry [<%= revision %>]</h1>
+<div class="container">
+    <h3 class="text-muted"><%= title %></h3>
+
+    <div class="row">
+        <div class="col-md-3">
+            <h4>Repositories</h4>
+            <ul data-bind="foreach: repositories" class="nav nav-pills nav-stacked">
+                <li data-bind="css: { active: $data === $parent.selectedRepository() }">
+                    <a href="#" data-bind="text: shortName, attr: { title: url }, click: $parent.selectedRepository"></a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-9">
+            <h4>Agents</h4>
+            <ul data-bind="foreach: repositoryAgents" class="nav nav-pills nav-stacked">
+                <li>
+                    <a href="#" data-bind="text: $data"></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</div>
 
 <script src="/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/bower_components/knockout/build/knockout-raw.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/app.js"></script>
 </body>
