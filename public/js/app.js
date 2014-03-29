@@ -1,31 +1,56 @@
-function AudreyModel(){
+function RepositoryModel(repoUrl, agentMap) {
+  var self = this,
+      urlRegex = /(\w+):\/\/(.+)\/(\w+)\/(.+)/,
+      repoData = urlRegex.exec(repoUrl);
+
+  this.repoUrl = repoUrl;
+  this.shortName = repoData[3] + '/' + repoData[4];
+  this.agents = ko.observableArray(
+      Object.keys(agentMap).map(function (agentId) {
+        return { id: agentId, requirements: agentMap[agentId] };
+      }));
+
+  this.addRegistration = function (agentId, reg) {
+    self.agents.push({ id: agentId, requirements: reg.requirements });
+  };
+
+  this.removeAgent = function (agentId) {
+    self.agents.remove(function(agent) {
+      return agent.id === agentId;
+    });
+  };
+}
+
+function AudreyModel() {
   var self = this;
   this.repositories = ko.observableArray();
-  this.selectedRepository = ko.observable({ agents: {}});
-  this.repositoryAgents = ko.computed(function(){
-    return Object.keys(self.selectedRepository().agents)
-        .map(function(agentId){
-          return agentId + ': ' + self.selectedRepository().agents[agentId];
-        });
-  });
+  this.selectedRepository = ko.observable();
 
-  this.addRepositories = function(repos) {
-    var urlRegex = /(\w+):\/\/(.+)\/(\w+)\/(.+)/;
-
-    Object.keys(repos).forEach(function(repo) {
-      if(self.repositories.indexOf(repo) == -1) {
-        var repoData = urlRegex.exec(repo);
-
-        self.repositories.push({
-          url: repo,
-          shortName: repoData[3] + '/' + repoData[4],
-          agents: repos[repo]
-        });
-      }
+  this.addRepositories = function (repos) {
+    _.forIn(repos, function (agents, repoUrl) {
+      self.repositories.push(new RepositoryModel(repoUrl, agents));
     });
 
     self.selectedRepository(self.repositories()[0]);
   };
+
+  this.addRegistration = function (agentId, reg) {
+    var repo = _.find(self.repositories(), { repoUrl: reg.repoUrl });
+
+    if (repo) {
+      repo.addRegistration(agentId, reg);
+    } else {
+      var agentMap = {};
+      agentMap[agentId] = req.requirements;
+      self.repositories.push(new RepositoryModel(reg.repoUrl, agentMap))
+    }
+  };
+
+  this.removeAgent = function (agentId) {
+    self.repositories().forEach(function (repo) {
+      repo.removeAgent(agentId);
+    });
+  }
 }
 
 $(function () {
@@ -36,14 +61,13 @@ $(function () {
 
   socket.on('connect', function () {
     console.log('connected');
-  });
-  socket.on('message', function (message) {
+  }).on('message', function (message) {
     console.log(message);
-  });
-  socket.on('repositories', function(repos) {
+  }).on('repos', function (repos) {
     audreyModel.addRepositories(repos);
-  });
-  /*socket.on('agentRegistration', function(agentId, registration) {
+  }).on('agentRegistration', function (agentId, registration) {
     audreyModel.addRegistration(agentId, registration);
-  });*/
+  }).on('agentDisconnected', function (agentId) {
+    audreyModel.removeAgent(agentId);
+  });
 });
