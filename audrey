@@ -6,8 +6,6 @@ var cli = require('commander'),
     pkg = require('./package.json'),
     version = pkg.version,
     registryUrl = "http://audrey.herokuapp.com",
-    defaultServerPort = 5001,
-    defaultRegistryPort = 5000,
     config = loadConfig();
 
 function loadConfig() {
@@ -22,33 +20,58 @@ function list(str) {
   return str.split(',');
 }
 
-function run(config) {
+function merge(target, source) {
+  for(var key in source) {
+    if(!target.hasOwnProperty(key)) {
+      target[key] = source[key];
+    }
+  }
+}
+
+function run(config, defaultConfig) {
+  config = config || {};
+  defaultConfig = defaultConfig || {};
+
   return function (options) {
-    require('./lib/' + options._name)(_.merge(config || {}, options));
+    merge(config, defaultConfig);
+    merge(options, config);
+
+    require('./lib/' + options._name)(options);
   };
 }
 
+var defaultServerConfig = {
+      repositories: [],
+      port: 5001,
+      registry: registryUrl
+    },
+    defaultAgentConfig = {
+      repositories: [],
+      registry: registryUrl
+    },
+    defaultRegistryConfig = {
+      port: process.env.PORT || 5000
+    };
+
 cli.command('server')
     .description('Starts a server')
-    .option("-r, --registry <url>", "The url of the registry", registryUrl)
+    .option("-r, --registry <url>", "The url of the registry")
     .option("-a, --address <address>",
     "IP address or hostname on which to listen for agent connections. By default it is inferred from the local NICs")
-    .option("-p, --port <port>", "Port on which to listen for agent connections",
-    parseInt, defaultServerPort)
-    .option("-R, --repositories <urls>", "A comma separated list of urls of the repositories to build", list, [])
-    .action(run(config.server));
+    .option("-p, --port <port>", "Port on which to listen for agent connections", parseInt)
+    .option("-R, --repositories <urls>", "A comma separated list of urls of the repositories to build", list)
+    .action(run(config.server, defaultServerConfig));
 
 cli.command('agent')
     .description('Starts an agent')
-    .option("-r, --registry <url>", "The url of the registry", registryUrl)
-    .option("-R, --repositories <urls>", "A comma separated list of urls of the repositories to build", list, [])
-    .action(run(config.agent));
+    .option("-r, --registry <url>", "The url of the registry")
+    .option("-R, --repositories <urls>", "A comma separated list of urls of the repositories to build", list)
+    .action(run(config.agent, defaultAgentConfig));
 
 cli.command('registry')
     .description('Starts a registry')
-    .option("-p, --port <port>", "Port on which to listen for server and agent connections",
-    parseInt, process.env.PORT || defaultRegistryPort)
-    .action(run(config.registry));
+    .option("-p, --port <port>", "Port on which to listen for server and agent connections", parseInt)
+    .action(run(config.registry, defaultRegistryConfig));
 
 cli.parse(process.argv);
 

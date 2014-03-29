@@ -1,6 +1,7 @@
 {
   "server": {
     "repositories": [
+      "https://github.com/simoneb/nunit-framework.git",
       "https://github.com/simoneb/audrey.git"
     ]
   },
