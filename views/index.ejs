@@ -7,6 +7,7 @@
     <title><%= title %></title>
 
     <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/stylesheets/app.css" rel="stylesheet">
 
     <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -28,9 +29,13 @@
         </div>
         <div class="col-md-9" data-bind="with: selectedRepository">
             <h4>Agents</h4>
-            <ul data-bind="foreach: agents" class="nav nav-pills nav-stacked">
-                <li>
-                    <a href="#" data-bind="text: id + ' [' + requirements.join(',') + ']'"></a>
+            <ul data-bind="foreach: agents" class="list-group">
+                <li class="list-group-item">
+                    <span data-bind="text: id"></span>
+                    <!-- ko foreach: requirements -->
+                    <span class="label label-info" data-bind="text: $data"></span>
+                    <!-- /ko -->
+                    <span class="label label-warning" data-bind="visible: busy">busy</span>
                 </li>
             </ul>
         </div>

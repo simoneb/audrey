@@ -1,3 +1,9 @@
+function AgentModel(agentId, agentData) {
+  this.id = agentId;
+  this.requirements = agentData.requirements;
+  this.busy = ko.observable(agentData.busy);
+}
+
 function RepositoryModel(repoUrl, agentMap) {
   var self = this,
       urlRegex = /(\w+):\/\/(.+)\/(\w+)\/(.+)/,
@@ -7,17 +13,25 @@ function RepositoryModel(repoUrl, agentMap) {
   this.shortName = repoData[3] + '/' + repoData[4];
   this.agents = ko.observableArray(
       Object.keys(agentMap).map(function (agentId) {
-        return { id: agentId, requirements: agentMap[agentId] };
+        return new AgentModel(agentId, agentMap[agentId]);
       }));
 
   this.addRegistration = function (agentId, reg) {
-    self.agents.push({ id: agentId, requirements: reg.requirements });
+    self.agents.push(new AgentModel(agentId, { requirements: reg.requirements }));
   };
 
   this.removeAgent = function (agentId) {
     self.agents.remove(function(agent) {
       return agent.id === agentId;
     });
+  };
+
+  this.agentBusy = function(agentId) {
+    _.find(self.agents(), { id: agentId }).busy(true);
+  };
+
+  this.agentFree = function(agentId) {
+    _.find(self.agents(), { id: agentId }).busy(false);
   };
 }
 
@@ -41,7 +55,7 @@ function AudreyModel() {
       repo.addRegistration(agentId, reg);
     } else {
       var agentMap = {};
-      agentMap[agentId] = req.requirements;
+      agentMap[agentId] = { requirements: reg.requirements };
       self.repositories.push(new RepositoryModel(reg.repoUrl, agentMap))
     }
   };
@@ -50,7 +64,19 @@ function AudreyModel() {
     self.repositories().forEach(function (repo) {
       repo.removeAgent(agentId);
     });
-  }
+  };
+
+  this.agentBusy = function(agentId) {
+    self.repositories().forEach(function (repo) {
+      repo.agentBusy(agentId);
+    });
+  };
+
+  this.agentFree= function(agentId) {
+    self.repositories().forEach(function (repo) {
+      repo.agentFree(agentId);
+    });
+  };
 }
 
 $(function () {
@@ -69,5 +95,9 @@ $(function () {
     audreyModel.addRegistration(agentId, registration);
   }).on('agentDisconnected', function (agentId) {
     audreyModel.removeAgent(agentId);
+  }).on('agentBusy', function (agentId) {
+    audreyModel.agentBusy(agentId);
+  }).on('agentFree', function (agentId) {
+    audreyModel.agentFree(agentId);
   });
 });
