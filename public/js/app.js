@@ -72,7 +72,7 @@ function AudreyModel() {
     });
   };
 
-  this.agentFree= function(agentId) {
+  this.agentFree = function(agentId) {
     self.repositories().forEach(function (repo) {
       repo.agentFree(agentId);
     });
