@@ -1,10 +1,11 @@
 var git = require('../lib/git');
 
-exports.index = function (req, res) {
+exports.registry = function (req, res) {
   git.lastCommitShortHash(function (err, hash) {
-    res.render('index', {
+    res.render('registry', {
       title: 'audrey',
-      revision: err ? "can't determine revision" : hash
+      revision: err ? "can't determine revision" : hash,
+      script: 'registry.js'
     });
   });
 };
