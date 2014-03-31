@@ -9,3 +9,10 @@ exports.registry = function (req, res) {
     });
   });
 };
+
+exports.server = function(req, res) {
+  res.render('server', {
+    title: 'audrey',
+    script: 'server.js'
+  });
+};

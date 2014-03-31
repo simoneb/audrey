@@ -2,11 +2,7 @@
 <div class="row">
   <div class="col-md-3">
     <h4>Repositories</h4>
-    <ul data-bind="foreach: repositories" class="nav nav-pills nav-stacked">
-      <li data-bind="css: { active: $data === $parent.selectedRepository() }">
-        <a href="#" data-bind="text: shortName, attr: { title: repoUrl }, click: $parent.selectedRepository"></a>
-      </li>
-    </ul>
+    <% include repositories %>
   </div>
   <div class="col-md-9" data-bind="with: selectedRepository">
     <h4>Agents</h4>
