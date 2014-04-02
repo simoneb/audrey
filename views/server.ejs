@@ -1,8 +1,8 @@
-<% include head %>
+<% include head.ejs %>
 <div class="row">
   <div class="col-md-2">
     <h4>Repositories</h4>
-    <% include repositories %>
+    <% include repositories.ejs %>
   </div>
   <div class="col-md-10" data-bind="with: selectedRepository">
     <div>
@@ -67,8 +67,10 @@
       <div class="tab-pane" id="history">
         <table data-bind="if: builds().length" class="table table-condensed table-hover">
           <thead>
-          <th>Build</th>
-          <th>Status</th>
+          <tr>
+            <th>Build</th>
+            <th>Status</th>
+          </tr>
           </thead>
           <tbody>
           <!-- ko foreach: builds -->
@@ -84,4 +86,4 @@
     </div>
   </div>
 </div>
-<% include foot %>
+<% include foot.ejs %>

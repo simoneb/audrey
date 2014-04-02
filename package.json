@@ -7,7 +7,7 @@
   },
   "main": "audrey",
   "scripts": {
-    "test": "echo Hello audrey!"
+    "test": "@echo Hello audrey!"
   },
   "repository": {
     "type": "git",

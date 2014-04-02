@@ -1,8 +1,8 @@
-<% include head %>
+<% include head.ejs %>
 <div class="row">
   <div class="col-md-3">
     <h4>Repositories</h4>
-    <% include repositories %>
+    <% include repositories.ejs %>
   </div>
   <div class="col-md-9" data-bind="with: selectedRepository">
     <h4>Agents</h4>
@@ -18,4 +18,4 @@
     <span data-bind="if: !agents().length">No agents available to build this repository</span>
   </div>
 </div>
-<% include foot %>
+<% include foot.ejs %>
