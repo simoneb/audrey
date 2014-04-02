@@ -6,6 +6,14 @@
   </div>
   <div class="col-md-9 small" data-bind="with: selectedRepository">
     <div class="row">
+      <a href="#" data-bind="if: displayRunButton, click: runBuild" title="Run build">
+        <span class="glyphicon glyphicon-play"></span>
+      </a>
+      <a href="#" data-bind="if: displayStopButton, click: stopBuild" title="Stop build">
+        <span class="glyphicon glyphicon-stop"></span>
+      </a>
+    </div>
+    <div class="row">
       <pre data-bind="text: buildLog().join('\n')"></pre>
     </div>
   </div>
