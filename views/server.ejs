@@ -1,20 +1,86 @@
 <% include head %>
 <div class="row">
-  <div class="col-md-3">
+  <div class="col-md-2">
     <h4>Repositories</h4>
     <% include repositories %>
   </div>
-  <div class="col-md-9 small" data-bind="with: selectedRepository">
-    <div class="row">
+  <div class="col-md-10" data-bind="with: selectedRepository">
+    <div>
+      <h4 data-bind="text: shortName"></h4>
       <a href="#" data-bind="if: displayRunButton, click: runBuild" title="Run build">
         <span class="glyphicon glyphicon-play"></span>
       </a>
       <a href="#" data-bind="if: displayStopButton, click: stopBuild" title="Stop build">
         <span class="glyphicon glyphicon-stop"></span>
       </a>
+      <span data-bind="text: status"></span>
     </div>
-    <div class="row">
-      <pre data-bind="text: buildLog().join('\n')"></pre>
+    <ul class="nav nav-tabs">
+      <li class="active"><a href="#lastBuild" data-toggle="tab">Last build</a></li>
+      <li><a href="#history" data-toggle="tab">Build History</a></li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane active" id="lastBuild">
+        <div data-bind="with: lastBuild">
+          <table class="table">
+            <tr>
+              <th>Build</th>
+              <td data-bind="text: buildId"></td>
+              <th>Status</th>
+              <td data-bind="text: status"></td>
+            </tr>
+          </table>
+
+          <pre data-bind="text: log().join('\n')"></pre>
+
+          <h3>Build Matrix</h3>
+
+          <div class="table-responsive">
+            <table class="table table-condensed">
+              <tr>
+                <th>Index</th>
+                <th>Status</th>
+                <th>Env</th>
+                <th>Requirements</th>
+                <th>Log</th>
+              </tr>
+              <!-- ko foreach: cells -->
+              <tr>
+                <td data-bind="text: cellIndex"></td>
+                <td data-bind="text: status"></td>
+                <td>
+                  <ul class="list-unstyled" data-bind="foreach: _.pairs(env)">
+                    <li><span data-bind="text: $data[0]"></span> = "<span data-bind="text: $data[1]"></span>"</li>
+                  </ul>
+                </td>
+                <td data-bind="text: requirements.join(', ')"></td>
+                <td>
+                  <pre data-bind="text: log().join('\n')"></pre>
+                </td>
+              </tr>
+              <!-- /ko -->
+            </table>
+          </div>
+        </div>
+        <p data-bind="if: !lastBuild()">No last build</p>
+      </div>
+      <div class="tab-pane" id="history">
+        <table data-bind="if: builds().length" class="table table-condensed table-hover">
+          <thead>
+          <th>Build</th>
+          <th>Status</th>
+          </thead>
+          <tbody>
+          <!-- ko foreach: builds -->
+          <tr>
+            <td data-bind="text: buildId"></td>
+            <td data-bind="text: status"></td>
+          </tr>
+          <!-- /ko -->
+          </tbody>
+        </table>
+        <p data-bind="if: !builds().length">No history</p>
+      </div>
     </div>
   </div>
 </div>

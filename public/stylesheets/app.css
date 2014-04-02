@@ -1,4 +1,4 @@
-.list-group-item>.label {
+.list-group-item > .label {
     float: right;
     margin-left: 2px;
 }

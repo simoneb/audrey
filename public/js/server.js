@@ -1,57 +1,197 @@
+var Status = {
+  unknown: 'Unknown',
+  created: 'Created',
+  running: 'Running',
+  inconclusive: 'Inconclusive',
+  error: 'Error',
+  completed: 'Completed'
+};
+
+function BuildCellModel(cell, cellIndex) {
+  this.env = cell.env;
+  this.requirements = cell.requirements;
+  this.cellIndex = cellIndex;
+  this.log = ko.observableArray();
+  this.status = ko.observable(Status.created);
+
+  this.started = function (data) {
+    this.status(Status.running);
+    this.log.push('Build started with data ' + JSON.stringify(data));
+  };
+
+  this.completed = function () {
+    this.status(Status.completed);
+  };
+
+  this.message = function(message) {
+    this.log.push(message);
+  };
+
+  this.buildLog = function (message) {
+    this.log.push(message);
+  };
+
+  this.error = function (err) {
+    this.status(Status.error);
+    this.log.push(err.toString());
+  };
+
+  this.agentFound = function() {
+    this.log.push('Available agent found');
+  };
+
+  this.agentNotFound = function() {
+    this.status(Status.inconclusive);
+    this.log.push('Available agent not found');
+  };
+}
+
+function BuildModel() {
+  var self = this;
+
+  this.buildId = uuid();
+  this.cells = ko.observableArray();
+  this.ownStatus = ko.observable(Status.created);
+  this.status = ko.computed(function () {
+    if (this.cells().length) {
+      var uniqueStatuses = _.uniq(_.invoke(this.cells(), 'status'));
+
+      if (uniqueStatuses.length === 1) {
+        return uniqueStatuses[0];
+      } else {
+        if (_.contains(uniqueStatuses, Status.error)) {
+          return Status.error;
+        }
+        if (_.contains(uniqueStatuses, Status.running)) {
+          return Status.running;
+        }
+
+        return uniqueStatuses[0];
+      }
+    } else {
+      return this.ownStatus();
+    }
+  }, this);
+  this.log = ko.observableArray();
+
+  function getCell(cellIndex) {
+    return _.find(self.cells(), { cellIndex: cellIndex });
+  }
+
+  this.matrix = function (cell, index) {
+    this.cells.push(new BuildCellModel(cell, index));
+  };
+
+  this.cellStarted = function (data, cellIndex) {
+    getCell(cellIndex).started(data);
+  };
+
+  this.cellMessage = function(message, cellIndex) {
+    getCell(cellIndex).message(message);
+  };
+
+  this.cellBuildLog = function (message, cellIndex) {
+    getCell(cellIndex).buildLog(message);
+  };
+
+  this.error = function (err) {
+    this.status(Status.error);
+    this.log.push(err.toString());
+  };
+
+  this.message = function (message) {
+    this.log.push(message);
+  };
+
+  this.cellCompleted = function (cellIndex) {
+    getCell(cellIndex).completed();
+  };
+
+  this.cellError = function (err, cellIndex) {
+    getCell(cellIndex).error(err);
+  };
+
+  this.cellAgentFound = function(cellIndex) {
+    getCell(cellIndex).agentFound();
+  };
+
+  this.cellAgentNotFound = function(cellIndex) {
+    getCell(cellIndex).agentNotFound();
+  };
+}
+
 function RepositoryModel(repoUrl) {
-  var urlRegex = /(\w+):\/\/(.+)\/(\w+)\/(.+)/,
+  var self = this,
+      urlRegex = /(\w+):\/\/(.+)\/(\w+)\/(.+)/,
       repoData = urlRegex.exec(repoUrl);
 
   this.repoUrl = repoUrl;
   this.shortName = repoData[3] + '/' + repoData[4];
-  this.buildLog = ko.observableArray();
-  this.buildId = ko.observable();
-  this.status = ko.observable();
-  this.displayRunButton = ko.computed(function () {
-    return this.status() !== 'running'
+  this.builds = ko.observableArray();
+
+  this.lastBuild = ko.computed(function () {
+    return this.builds().length && this.builds()[this.builds().length - 1];
   }, this);
+
+  this.status = ko.computed(function () {
+    return this.lastBuild() && this.lastBuild().status() || Status.unknown;
+  }, this);
+
+  this.displayRunButton = ko.computed(function () {
+    return this.status() !== Status.running;
+  }, this);
+
   this.displayStopButton = ko.computed(function () {
-    return this.status() === 'running'
+    return this.status() === Status.running;
   }, this);
 
   this.runBuild = function () {
-    this.buildId(uuid());
-    this.buildLog([]);
-    server.emit('runBuild', repoUrl, this.buildId());
+    self.builds.push(new BuildModel());
+    server.emit('runBuild', repoUrl, this.lastBuild().buildId);
   };
 
-  this.stopBuild = function () {
-    server.emit('stopBuild', this.buildId());
+  this.stopBuild = function (buildId) {
+    server.emit('stopBuild', buildId);
   };
 
-  this.matrixStarted = function (data, matrixId) {
-    this.status('running');
-    this.buildLog.push('Build started with data ' + JSON.stringify(data));
+  this.cellStarted = function (data, cellIndex) {
+    this.lastBuild().cellStarted(data, cellIndex);
   };
 
-  this.matrixBuild = function (message, matrixId) {
-    this.buildLog.push(message);
+  this.cellError = function (err, cellIndex) {
+    this.lastBuild().cellError(err, cellIndex);
+  };
+
+  this.cellBuildLog = function (message, cellIndex) {
+    this.lastBuild().cellBuildLog(message, cellIndex);
   };
 
   this.buildError = function (err, buildId) {
-    this.status('error');
-    this.buildLog.push(err.toString());
+    this.lastBuild().error(err);
   };
 
-  this.matrixCompleted = function (matrixId) {
-    this.status('completed');
+  this.buildMessage = function (message) {
+    this.lastBuild().message(message);
   };
 
-  this.buildMessage = function (message, buildId) {
-    this.buildLog.push(message);
+  this.cellCompleted = function (cellIndex) {
+    this.lastBuild().cellCompleted(cellIndex);
   };
 
-  this.matrixMessage = function(message, matrixid) {
-    this.buildLog.push(message);
-  }
+  this.cellMessage = function (message, cellIndex) {
+    this.lastBuild().cellMessage(message, cellIndex);
+  };
 
-  this.buildMatrix = function(cell, index, buildId) {
+  this.buildMatrix = function (cell, index) {
+    this.lastBuild().matrix(cell, index);
+  };
 
+  this.cellAgentFound = function(cellIndex) {
+    this.lastBuild().cellAgentFound(cellIndex);
+  };
+
+  this.cellAgentNotFound = function(cellIndex) {
+    this.lastBuild().cellAgentNotFound(cellIndex);
   };
 }
 
@@ -70,57 +210,54 @@ function ServerModel() {
     self.selectedRepository(self.repositories()[0]);
   };
 
-  self.agentConnected = function (agentId, buildId) {
-
-  };
-  self.agentDisconnected = function (agentId, buildId) {
-
-  };
-
-  function getRepoByBuild(id) {
-    if(id.hasOwnProperty('id')) {
-      id = id.id;
-    };
-
-    if(!buildsToRepo[id]) {
-      buildsToRepo[id] = _.find(self.repositories(), function(repo) {
-        return repo.buildId() === id;
+  function getRepoByBuild(buildId) {
+    if (!buildsToRepo[buildId]) {
+      buildsToRepo[buildId] = _.find(self.repositories(), function (repo) {
+        return repo.lastBuild().buildId === buildId;
       });
     }
 
-    return buildsToRepo[id];
+    return buildsToRepo[buildId];
   }
 
-  self.matrixStarted = function (data, matrixId) {
-    getRepoByBuild(matrixId).matrixStarted(data, matrixId);
+  self.cellStarted = function (data, buildId, cellIndex) {
+    getRepoByBuild(buildId).cellStarted(data, cellIndex);
   };
 
-  self.matrixCompleted = function(matrixId) {
-    getRepoByBuild(matrixId).matrixCompleted(matrixId);
+  self.cellCompleted = function (buildId, cellIndex) {
+    getRepoByBuild(buildId).cellCompleted(cellIndex);
   };
 
-  self.matrixBuild = function (message, matrixId) {
-    getRepoByBuild(matrixId).matrixBuild(message, matrixId);
+  self.cellBuildLog = function (message, buildId, cellIndex) {
+    getRepoByBuild(buildId).cellBuildLog(message, cellIndex);
   };
 
   self.buildError = function (err, buildId) {
-    getRepoByBuild(buildId).buildError(err, buildId);
+    getRepoByBuild(buildId).buildError(err);
   };
 
-  self.matrixError = function (err, matrixId) {
-    getRepoByBuild(matrixId).matrixError(err, matrixId);
+  self.cellError = function (err, buildId, cellIndex) {
+    getRepoByBuild(buildId).cellError(err, cellIndex);
   };
 
   self.buildMatrix = function (cell, index, buildId) {
-    getRepoByBuild(buildId).buildMatrix(cell, index, buildId);
+    getRepoByBuild(buildId).buildMatrix(cell, index);
   };
 
   self.buildMessage = function (message, buildId) {
     getRepoByBuild(buildId).buildMessage(message);
   };
 
-  self.matrixMessage = function(message, matrixId) {
-    getRepoByBuild(matrixId).matrixMessage(message);
+  self.cellMessage = function (message, buildId, cellIndex) {
+    getRepoByBuild(buildId).cellMessage(message, cellIndex);
+  };
+
+  self.cellAgentFound = function(buildId, cellIndex) {
+    getRepoByBuild(buildId).cellAgentFound(cellIndex);
+  };
+
+  self.cellAgentNotFound = function(buildId, cellIndex) {
+    getRepoByBuild(buildId).cellAgentNotFound(cellIndex);
   };
 }
 
@@ -135,32 +272,32 @@ $(function () {
   server.on('connect', function () {
     console.log('connected');
   });
-  server.on('agentConnected', function (agentId) {
-    model.agentConnected(agentId);
+  server.on('cellAgentFound', function(buildId, cellIndex) {
+    model.cellAgentFound(buildId, cellIndex);
   });
-  server.on('agentDisconnected', function (agentId) {
-    model.agentDisconnected(agentId);
+  server.on('cellAgentNotFound', function(buildId, cellIndex) {
+    model.cellAgentNotFound(buildId, cellIndex);
   });
-  server.on('matrixStarted', function (data, matrixId) {
-    model.matrixStarted(data, matrixId);
+  server.on('cellStarted', function (data, buildId, cellIndex) {
+    model.cellStarted(data, buildId, cellIndex);
   });
   server.on('buildError', function (err, buildId) {
     model.buildError(err, buildId);
   });
-  server.on('matrixError', function (err, matrixId) {
-    model.matrixError(err, matrixId);
+  server.on('cellError', function (err, buildId, cellIndex) {
+    model.cellError(err, buildId, cellIndex);
   });
-  server.on('matrixCompleted', function (matrixId) {
-    model.matrixCompleted(matrixId);
+  server.on('cellCompleted', function (buildId, cellIndex) {
+    model.cellCompleted(buildId, cellIndex);
   });
-  server.on('matrixBuild', function (message, matrixId) {
-    model.matrixBuild(message, matrixId);
+  server.on('cellBuildLog', function (message, buildId, cellIndex) {
+    model.cellBuildLog(message, buildId, cellIndex);
   });
   server.on('buildMessage', function (message, buildId) {
     model.buildMessage(message, buildId);
   });
-  server.on('matrixMessage', function(message, buildId){
-    model.matrixMessage(message, buildId);
+  server.on('cellMessage', function (message, buildId, cellIndex) {
+    model.cellMessage(message, buildId, cellIndex);
   });
   server.on('buildMatrix', function (cell, index, buildId) {
     model.buildMatrix(cell, index, buildId);
