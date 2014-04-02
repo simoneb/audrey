@@ -5,6 +5,7 @@ function RepositoryModel(repoUrl) {
   this.repoUrl = repoUrl;
   this.shortName = repoData[3] + '/' + repoData[4];
   this.buildLog = ko.observableArray();
+  this.buildId = ko.observable();
   this.status = ko.observable();
   this.displayRunButton = ko.computed(function () {
     return this.status() !== 'running'
@@ -13,20 +14,22 @@ function RepositoryModel(repoUrl) {
     return this.status() === 'running'
   }, this);
 
-  this.runBuild = function() {
-    socket.emit('runBuild', repoUrl);
+  this.runBuild = function () {
+    this.buildId(uuid());
+    this.buildLog([]);
+    server.emit('runBuild', repoUrl, this.buildId());
   };
 
-  this.stopBuild = function() {
-    socket.emit('stopBuild', repoUrl);
+  this.stopBuild = function () {
+    server.emit('stopBuild', this.buildId());
   };
 
-  this.buildStarted = function (data, buildId) {
+  this.matrixStarted = function (data, matrixId) {
     this.status('running');
     this.buildLog.push('Build started with data ' + JSON.stringify(data));
   };
 
-  this.build = function (message, buildId) {
+  this.matrixBuild = function (message, matrixId) {
     this.buildLog.push(message);
   };
 
@@ -35,13 +38,21 @@ function RepositoryModel(repoUrl) {
     this.buildLog.push(err.toString());
   };
 
-  this.buildCompleted = function (buildId) {
+  this.matrixCompleted = function (matrixId) {
     this.status('completed');
   };
 
-  this.message = function(message) {
+  this.buildMessage = function (message, buildId) {
+    this.buildLog.push(message);
+  };
+
+  this.matrixMessage = function(message, matrixid) {
     this.buildLog.push(message);
   }
+
+  this.buildMatrix = function(cell, index, buildId) {
+
+  };
 }
 
 function ServerModel() {
@@ -59,61 +70,102 @@ function ServerModel() {
     self.selectedRepository(self.repositories()[0]);
   };
 
-  self.buildStarted = function (data, buildId) {
-    var repo = _.find(self.repositories(), { repoUrl: data.repoUrl });
-    buildsToRepo[buildId] = repo;
+  self.agentConnected = function (agentId, buildId) {
 
-    repo.buildStarted(data, buildId);
+  };
+  self.agentDisconnected = function (agentId, buildId) {
+
   };
 
-  self.build = function (message, buildId) {
-    buildsToRepo[buildId].build(message, buildId);
+  function getRepoByBuild(id) {
+    if(id.hasOwnProperty('id')) {
+      id = id.id;
+    };
+
+    if(!buildsToRepo[id]) {
+      buildsToRepo[id] = _.find(self.repositories(), function(repo) {
+        return repo.buildId() === id;
+      });
+    }
+
+    return buildsToRepo[id];
+  }
+
+  self.matrixStarted = function (data, matrixId) {
+    getRepoByBuild(matrixId).matrixStarted(data, matrixId);
+  };
+
+  self.matrixCompleted = function(matrixId) {
+    getRepoByBuild(matrixId).matrixCompleted(matrixId);
+  };
+
+  self.matrixBuild = function (message, matrixId) {
+    getRepoByBuild(matrixId).matrixBuild(message, matrixId);
   };
 
   self.buildError = function (err, buildId) {
-    buildsToRepo[buildId].buildError(err, buildId);
+    getRepoByBuild(buildId).buildError(err, buildId);
   };
 
-  self.message = function(message, repoUrl) {
-    _.find(self.repositories(), { repoUrl: repoUrl }).message(message);
+  self.matrixError = function (err, matrixId) {
+    getRepoByBuild(matrixId).matrixError(err, matrixId);
+  };
+
+  self.buildMatrix = function (cell, index, buildId) {
+    getRepoByBuild(buildId).buildMatrix(cell, index, buildId);
+  };
+
+  self.buildMessage = function (message, buildId) {
+    getRepoByBuild(buildId).buildMessage(message);
+  };
+
+  self.matrixMessage = function(message, matrixId) {
+    getRepoByBuild(matrixId).matrixMessage(message);
   };
 }
 
-var socket;
+var server;
 
 $(function () {
-  var serverModel = new ServerModel();
-  ko.applyBindings(serverModel, document.body);
+  var model = new ServerModel();
+  ko.applyBindings(model, document.body);
 
-  socket = io.connect('http:///client');
+  server = io.connect('http:///client');
 
-  socket.on('connect', function () {
+  server.on('connect', function () {
     console.log('connected');
   });
-  socket.on('agentConnected', function (agentId, buildId) {
-    console.log('agent connected');
+  server.on('agentConnected', function (agentId) {
+    model.agentConnected(agentId);
   });
-  socket.on('buildStarted', function (data, buildId) {
-    console.log('build started');
-    serverModel.buildStarted(data, buildId);
+  server.on('agentDisconnected', function (agentId) {
+    model.agentDisconnected(agentId);
   });
-  socket.on('buildError', function (err, buildId) {
-    serverModel.buildError(err, buildId);
+  server.on('matrixStarted', function (data, matrixId) {
+    model.matrixStarted(data, matrixId);
   });
-  socket.on('buildCompleted', function (buildId) {
-    console.log('buildCompleted');
+  server.on('buildError', function (err, buildId) {
+    model.buildError(err, buildId);
   });
-  socket.on('build', function (message, buildId) {
-    serverModel.build(message, buildId);
+  server.on('matrixError', function (err, matrixId) {
+    model.matrixError(err, matrixId);
   });
-  socket.on('message', function (message, repoUrl) {
-    serverModel.message(message, repoUrl);
-    console.log(message);
+  server.on('matrixCompleted', function (matrixId) {
+    model.matrixCompleted(matrixId);
   });
-  socket.on('agentDisconnected', function (agentId, buildId) {
-    console.log('agent disconnected');
+  server.on('matrixBuild', function (message, matrixId) {
+    model.matrixBuild(message, matrixId);
   });
-  socket.on('repos', function (repos) {
-    serverModel.addRepositories(repos);
+  server.on('buildMessage', function (message, buildId) {
+    model.buildMessage(message, buildId);
+  });
+  server.on('matrixMessage', function(message, buildId){
+    model.matrixMessage(message, buildId);
+  });
+  server.on('buildMatrix', function (cell, index, buildId) {
+    model.buildMatrix(cell, index, buildId);
+  });
+  server.on('repos', function (repos) {
+    model.addRepositories(repos);
   });
 });
