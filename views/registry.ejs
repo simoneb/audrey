@@ -15,6 +15,7 @@
         <span class="label label-warning" data-bind="visible: busy">busy</span>
       </li>
     </ul>
+    <span data-bind="if: !agents().length">No agents available to build this repository</span>
   </div>
 </div>
 <% include foot %>

@@ -2,7 +2,8 @@
 
 var cli = require('commander'),
     join = require('path').join,
-    pkg = require('./package.json');
+    pkg = require('./package.json'),
+    u = require('./lib/util');
 
 var registryUrl = "http://audrey.herokuapp.com",
     configFile = loadConfigFromFile(),
@@ -33,21 +34,13 @@ function list(str) {
   return str.split(',');
 }
 
-function merge(target, source) {
-  for (var key in source) {
-    if (!target.hasOwnProperty(key)) {
-      target[key] = source[key];
-    }
-  }
-}
-
 function run(config, defaultConfig) {
   config = config || {};
   defaultConfig = defaultConfig || {};
 
   return function (options) {
-    merge(config, defaultConfig);
-    merge(options, config);
+    u.merge(config, defaultConfig);
+    u.merge(options, config);
 
     require('./lib/' + options._name)(options);
   };

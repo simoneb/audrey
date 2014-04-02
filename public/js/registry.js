@@ -35,7 +35,7 @@ function RepositoryModel(repoUrl, agentMap) {
   };
 }
 
-function AudreyModel() {
+function RegistryModel() {
   var self = this;
   this.repositories = ko.observableArray();
   this.selectedRepository = ko.observable();
@@ -80,8 +80,8 @@ function AudreyModel() {
 }
 
 $(function () {
-  var audreyModel = new AudreyModel();
-  ko.applyBindings(audreyModel, document.body);
+  var registryModel = new RegistryModel();
+  ko.applyBindings(registryModel, document.body);
 
   var socket = io.connect('http:///client');
 
@@ -90,14 +90,14 @@ $(function () {
   }).on('message', function (message) {
     console.log(message);
   }).on('repos', function (repos) {
-    audreyModel.addRepositories(repos);
+    registryModel.addRepositories(repos);
   }).on('agentRegistration', function (agentId, registration) {
-    audreyModel.addRegistration(agentId, registration);
+    registryModel.addRegistration(agentId, registration);
   }).on('agentDisconnected', function (agentId) {
-    audreyModel.removeAgent(agentId);
+    registryModel.removeAgent(agentId);
   }).on('agentBusy', function (agentId) {
-    audreyModel.agentBusy(agentId);
+    registryModel.agentBusy(agentId);
   }).on('agentFree', function (agentId) {
-    audreyModel.agentFree(agentId);
+    registryModel.agentFree(agentId);
   });
 });

@@ -6,32 +6,7 @@
   </div>
   <div class="col-md-9 small" data-bind="with: selectedRepository">
     <div class="row">
-      <div class="col-sm-1">Build</div>
-      <div class="col-sm-1">#</div>
-      <div class="col-sm-1">Commit</div>
-      <div class="col-sm-1">#</div>
-      <div class="row">
-        <div class="col-sm-1">State</div>
-        <div class="col-sm-1">Passed</div>
-        <div class="col-sm-1">Compare</div>
-        <div class="col-sm-1">#</div>
-      </div>
-      <div class="row">
-        <div class="col-sm-1">Finished</div>
-        <div class="col-sm-1">#</div>
-        <div class="col-sm-1">Author</div>
-        <div class="col-sm-1">#</div>
-      </div>
-      <div class="row">
-        <div class="col-sm-1">Duration</div>
-        <div class="col-sm-1">#</div>
-        <div class="col-sm-1">Committer</div>
-        <div class="col-sm-1">#</div>
-      </div>
-      <div class="row">
-        <div class="col-sm-1">Message</div>
-        <div class="col-sm-3">#</div>
-      </div>
+      <pre data-bind="text: buildLog().join('\n')"></pre>
     </div>
   </div>
 </div>
