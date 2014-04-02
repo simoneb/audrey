@@ -95,8 +95,8 @@ function BuildModel() {
   };
 
   this.error = function (err) {
-    this.status(Status.error);
-    this.log.push(err.toString());
+    this.ownStatus(Status.error);
+    this.log.push(JSON.stringify(err));
   };
 
   this.message = function (message) {
