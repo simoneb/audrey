@@ -5,7 +5,8 @@ exports.registry = function (req, res) {
     res.render('registry', {
       title: 'audrey registry',
       revision: err ? "can't determine revision" : hash,
-      script: 'registry.js'
+      script: 'registry.js',
+      links: []
     });
   });
 };
@@ -13,6 +14,7 @@ exports.registry = function (req, res) {
 exports.server = function(req, res) {
   res.render('server', {
     title: 'audrey server',
-    script: 'server.js'
+    script: 'server.js',
+    links: []
   });
 };
